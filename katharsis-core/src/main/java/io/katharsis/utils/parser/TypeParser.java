@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -105,7 +106,11 @@ public class TypeParser {
 		} else {
 			Method method;
 			try {
-				method = clazz.getMethod("parse", String.class);
+				try {
+					method = clazz.getMethod("parse", String.class);
+				} catch (NoSuchMethodException e) { // NOSONAR
+					method = clazz.getMethod("parse", CharSequence.class);
+				} 
 				return (T) method.invoke(clazz, input);
 			} catch (NoSuchMethodException e) { // NOSONAR
 				// not available
@@ -123,8 +128,7 @@ public class TypeParser {
 	private boolean containsStringConstructor(Class<?> clazz) throws NoSuchMethodException {
 		boolean result = false;
 		for (Constructor constructor : clazz.getDeclaredConstructors()) {
-
-			if (constructor.getParameterTypes().length == 1 && constructor.getParameterTypes()[0] == String.class) {
+			if (!Modifier.isPrivate(constructor.getModifiers()) && constructor.getParameterTypes().length == 1 && constructor.getParameterTypes()[0] == String.class) {
 				result = true;
 			}
 		}

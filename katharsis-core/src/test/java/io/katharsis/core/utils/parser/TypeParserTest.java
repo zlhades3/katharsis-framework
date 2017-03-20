@@ -231,6 +231,25 @@ public class TypeParserTest {
         assertThat(result).hasSize(1);
         assertThat(result.iterator().next()).isEqualTo(1L);
     }
+    
+    
+    @Test
+    public void shouldMakeUseofParseCharSequenceMethod() throws Exception {
+    	StaticParseCharSequenceClass result = sut.parse("1", StaticParseCharSequenceClass.class);
+        assertThat(result).isExactlyInstanceOf(StaticParseCharSequenceClass.class);
+        assertThat(result.toString()).isEqualTo("1");
+    }
+    
+    @Test
+    public void shouldMakeUseofParseStringMethod() throws Exception {
+    	StaticParseStringClass result = sut.parse("1", StaticParseStringClass.class);
+        assertThat(result).isExactlyInstanceOf(StaticParseStringClass.class);
+        assertThat(result.toString()).isEqualTo("1");
+    }
+    
+    
+    // CharSequenceParseClass
+
 
     private enum SampleEnum {
         SAMPLE_VALUE
@@ -254,6 +273,40 @@ public class TypeParserTest {
         @Override
         public int hashCode() {
             return Objects.hash(input);
+        }
+    }
+    
+    public static class StaticParseStringClass implements Serializable {
+    	
+        private final String input;
+
+        private StaticParseStringClass(String input) {
+            this.input = input;
+        }
+        
+        public static StaticParseStringClass parse(String input){
+        	return new StaticParseStringClass(input);
+        }
+        
+        public String toString(){
+        	return input;
+        }
+    }
+    
+    public static class StaticParseCharSequenceClass implements Serializable {
+    	
+        private final String input;
+
+        private StaticParseCharSequenceClass(String input) {
+            this.input = input;
+        }
+        
+        public static StaticParseCharSequenceClass parse(CharSequence input){
+        	return new StaticParseCharSequenceClass(input.toString());
+        }
+        
+        public String toString(){
+        	return input;
         }
     }
 
