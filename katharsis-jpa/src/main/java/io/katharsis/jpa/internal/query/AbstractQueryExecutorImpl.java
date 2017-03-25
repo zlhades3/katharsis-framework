@@ -7,16 +7,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.persistence.EntityGraph;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
-import javax.persistence.Subgraph;
 
 import io.katharsis.jpa.query.JpaQueryExecutor;
 import io.katharsis.meta.model.MetaAttributePath;
 import io.katharsis.meta.model.MetaDataObject;
 
 public abstract class AbstractQueryExecutorImpl<T> implements JpaQueryExecutor<T> {
+
+	private static final String ENTITY_GRAPH_BUILDER_IMPL = "io.katharsis.jpa.internal.query.EntityGraphBuilderImpl";
 
 	protected int offset = 0;
 
@@ -95,8 +95,7 @@ public abstract class AbstractQueryExecutorImpl<T> implements JpaQueryExecutor<T
 				entityList.add((T) values[0]);
 			}
 			resultList = entityList;
-		}
-		else {
+		} else {
 			resultList = (List<T>) list;
 		}
 		return resultList;
@@ -175,30 +174,26 @@ public abstract class AbstractQueryExecutorImpl<T> implements JpaQueryExecutor<T
 	}
 
 	protected void applyFetchPaths(Query criteriaQuery) {
-		EntityGraph<T> graph = em.createEntityGraph(getEntityClass());
-		for (MetaAttributePath fetchPath : fetchPaths) {
-			applyFetchPaths(graph, fetchPath);
+		if (!fetchPaths.isEmpty()) {
+			EntityGraphBuilder builder;
+			try {
+				// avoid compile-time dependency
+				builder = (EntityGraphBuilder) Class.forName(ENTITY_GRAPH_BUILDER_IMPL).newInstance();
+			} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+				throw new IllegalStateException(e);
+			}
+			Class<T> entityClass = getEntityClass();
+			builder.build(em, criteriaQuery, entityClass, fetchPaths);
 		}
-		criteriaQuery.setHint("javax.persistence.fetchgraph", graph);
 	}
 
-	private Subgraph<Object> applyFetchPaths(EntityGraph<T> graph, MetaAttributePath fetchPath) {
-		if (fetchPath.length() >= 2) {
-			// ensure parent is fetched
-			MetaAttributePath parentPath = fetchPath.subPath(0, fetchPath.length() - 1);
-			Subgraph<Object> parentGraph = applyFetchPaths(graph, parentPath);
-			return parentGraph.addSubgraph(fetchPath.toString());
-		}
-		else {
-			return graph.addSubgraph(fetchPath.toString());
-		}
-	}
-	
 	public abstract Query getTypedQuery();
 
 	protected Query setupQuery(Query typedQuery) {
 		// apply graph control
-		applyFetchPaths(typedQuery);
+		if (!fetchPaths.isEmpty()) {
+			applyFetchPaths(typedQuery);
+		}
 
 		// control Hibernate query caching
 		if (cached) {
@@ -215,7 +210,7 @@ public abstract class AbstractQueryExecutorImpl<T> implements JpaQueryExecutor<T
 	@SuppressWarnings("rawtypes")
 	public List<T> executeQuery() {
 		Query typedQuery = getTypedQuery();
-		
+
 		setupQuery(typedQuery);
 
 		// query execution
