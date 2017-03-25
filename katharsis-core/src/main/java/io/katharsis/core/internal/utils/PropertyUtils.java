@@ -303,7 +303,7 @@ public class PropertyUtils {
     }
 
     @SuppressWarnings("unchecked")
-    private Object prepareValue(Object value, Class<?> fieldClass) {
+    public static Object prepareValue(Object value, Class<?> fieldClass) {
         if (Set.class.isAssignableFrom(fieldClass) && value instanceof List) {
             return new LinkedHashSet<>((List) value);
         } else if (List.class.isAssignableFrom(fieldClass) && value instanceof Set) {

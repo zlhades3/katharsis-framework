@@ -70,7 +70,7 @@ public class RelationshipRepositoryStubImpl<T, I extends Serializable, D, J exte
 
 	private Serializable getSourceId(T source) {
 		ResourceField idField = sourceResourceInformation.getIdField();
-		return (Serializable) PropertyUtils.getProperty(source, idField.getUnderlyingName());
+		return (Serializable) idField.getAccessor().getValue(source);
 	}
 
 	@SuppressWarnings("unchecked")

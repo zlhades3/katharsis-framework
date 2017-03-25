@@ -399,7 +399,7 @@ public class ConstraintViolationExceptionMapper implements ExceptionMapper<Const
 		RegistryEntry entry = resourceRegistry.findEntry(resource.getClass());
 		ResourceInformation resourceInformation = entry.getResourceInformation();
 		ResourceField idField = resourceInformation.getIdField();
-		Object id = PropertyUtils.getProperty(resource, idField.getUnderlyingName());
+		Object id = idField.getAccessor().getValue(resource);
 		if (id != null) {
 			return id.toString();
 		}

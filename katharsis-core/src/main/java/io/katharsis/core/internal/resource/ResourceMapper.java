@@ -57,7 +57,7 @@ public class ResourceMapper {
 
 	private MetaInformation getResourceMeta(Object entity, ResourceInformation resourceInformation) {
 		if (resourceInformation.getMetaField() != null) {
-			return (MetaInformation) PropertyUtils.getProperty(entity, resourceInformation.getMetaField().getUnderlyingName());
+			return (MetaInformation) resourceInformation.getMetaField().getAccessor().getValue(entity);
 		}
 		return null;
 	}
@@ -65,7 +65,7 @@ public class ResourceMapper {
 	public LinksInformation getResourceLinks(Object entity, ResourceInformation resourceInformation) {
 		LinksInformation info;
 		if (resourceInformation.getLinksField() != null) {
-			info = (LinksInformation) PropertyUtils.getProperty(entity, resourceInformation.getLinksField().getUnderlyingName());
+			info = (LinksInformation) resourceInformation.getLinksField().getAccessor().getValue(entity);
 		} else {
 			info = new DefaultSelfRelatedLinksInformation();
 		}
@@ -84,7 +84,7 @@ public class ResourceMapper {
 
 		// serialize the individual attributes
 		for (ResourceField field : fields) {
-			Object value = PropertyUtils.getProperty(entity, field.getUnderlyingName());
+			Object value = field.getAccessor().getValue(entity);
 			JsonNode valueNode = objectMapper.valueToTree(value);
 			resource.getAttributes().put(field.getJsonName(), valueNode);
 		}

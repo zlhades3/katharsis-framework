@@ -4,8 +4,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -73,6 +75,8 @@ public class ResourceInformation {
 	 * Resource type of the super type.
 	 */
 	private String superResourceType;
+	
+	private Map<String, ResourceField> fieldByJsonName = new HashMap<>();
 
 	public ResourceInformation(TypeParser parser, Class<?> resourceClass, String resourceType, String superResourceType, List<ResourceField> fields) {
 		this(parser, resourceClass, resourceType, superResourceType, null, fields);
@@ -105,6 +109,7 @@ public class ResourceInformation {
 
 			for (ResourceField resourceField : fields) {
 				resourceField.setResourceInformation(this);
+				fieldByJsonName.put(resourceField.getJsonName(), resourceField);
 			}
 		} else {
 			this.relationshipFields = Collections.emptyList();
@@ -179,22 +184,13 @@ public class ResourceInformation {
 	}
 
 	public ResourceField findRelationshipFieldByName(String name) {
-		return getJsonField(name, relationshipFields);
+		ResourceField resourceField = fieldByJsonName.get(name);
+		return resourceField != null && resourceField.getResourceFieldType() == ResourceFieldType.RELATIONSHIP ? resourceField : null;
 	}
 
 	public ResourceField findAttributeFieldByName(String name) {
-		return getJsonField(name, attributeFields.getFields());
-	}
-
-	private static ResourceField getJsonField(String name, List<ResourceField> fields) {
-		ResourceField foundField = null;
-		for (ResourceField field : fields) {
-			if (field.getJsonName().equals(name)) {
-				foundField = field;
-				break;
-			}
-		}
-		return foundField;
+		ResourceField resourceField = fieldByJsonName.get(name);
+		return resourceField != null && resourceField.getResourceFieldType() == ResourceFieldType.ATTRIBUTE ? resourceField : null;
 	}
 
 	public ResourceField getMetaField() {
@@ -273,11 +269,11 @@ public class ResourceInformation {
 	 * @return id of the resource
 	 */
 	public Object getId(Object resource) {
-		return PropertyUtils.getProperty(resource, idField.getUnderlyingName());
+		return idField.getAccessor().getValue(resource);
 	}
 
 	public void setId(Object resource, Object id) {
-		PropertyUtils.setProperty(resource, idField.getUnderlyingName(), id);
+		idField.getAccessor().setValue(resource, id);
 	}
 
 	@Deprecated // Temporary method until proper versioning/locking/timestamping

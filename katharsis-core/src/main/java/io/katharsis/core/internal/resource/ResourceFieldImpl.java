@@ -7,6 +7,7 @@ import java.util.Objects;
 import io.katharsis.core.internal.utils.PreconditionUtil;
 import io.katharsis.resource.annotations.LookupIncludeBehavior;
 import io.katharsis.resource.information.ResourceField;
+import io.katharsis.resource.information.ResourceFieldAccessor;
 import io.katharsis.resource.information.ResourceFieldType;
 import io.katharsis.resource.information.ResourceInformation;
 
@@ -33,6 +34,8 @@ public class ResourceFieldImpl implements ResourceField {
 	private String oppositeName;
 
 	private ResourceInformation parentResourceInformation;
+	
+	private ResourceFieldAccessor accessor;
 
 	public ResourceFieldImpl(String jsonName, String underlyingName, ResourceFieldType resourceFieldType, Class<?> type, Type genericType, String oppositeResourceType) {
 		this(jsonName, underlyingName, resourceFieldType, type, genericType, oppositeResourceType, null, true, false, LookupIncludeBehavior.NONE);
@@ -143,8 +146,17 @@ public class ResourceFieldImpl implements ResourceField {
 	public ResourceInformation getParentResourceInformation() {
 		return parentResourceInformation;
 	}
-
+	
+	@Override
+	public ResourceFieldAccessor getAccessor(){
+		if(accessor == null){
+			throw new IllegalStateException("field not properly initialized");
+		}
+		return accessor;
+	}
+	
 	public void setResourceInformation(ResourceInformation resourceInformation) {
+		this.accessor = new ReflectionFieldAccessor(resourceInformation.getResourceClass(), underlyingName, type);
 		this.parentResourceInformation = resourceInformation;
 	}
 
