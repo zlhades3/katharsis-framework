@@ -191,7 +191,7 @@ public class IncludeLookupSetter {
 
 			Object source = entityMap.get(id);
 			if (source != null && !(source instanceof Resource)) {
-				Object targetEntity = PropertyUtils.getProperty(source, relationshipField.getUnderlyingName());
+				Object targetEntity = relationshipField.getAccessor().getValue(source);
 
 				if (!lookUp && Iterable.class.isAssignableFrom(relationshipField.getType()) && targetEntity == null) {
 					throw new InternalServerErrorException(id + " relationship field collection '" + relationshipField.getJsonName() + "' can not be null. Either set the relationship as an empty "

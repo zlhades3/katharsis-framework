@@ -52,7 +52,7 @@ public class ClientDocumentMapper extends DocumentMapper {
 				// we also include relationship data if it is not null and not a
 				// unloaded proxy
 				boolean includeRelation = true;
-				Object relationshipValue = PropertyUtils.getProperty(entity, field.getUnderlyingName());
+				Object relationshipValue = field.getAccessor().getValue(entity);
 				if (relationshipValue instanceof ObjectProxy) {
 					includeRelation = ((ObjectProxy) relationshipValue).isLoaded();
 				} else {

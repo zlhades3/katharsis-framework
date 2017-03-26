@@ -55,4 +55,6 @@ public interface ResourceField {
 	public void setResourceInformation(ResourceInformation resourceInformation);
 
 	public boolean isCollection();
+
+	public ResourceFieldAccessor getAccessor();
 }

@@ -4,12 +4,16 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import io.katharsis.core.internal.utils.MethodCache;
+import io.katharsis.utils.Optional;
 
 /**
  * Parses {@link String} into an instance of provided {@link Class}. It support
@@ -34,6 +38,8 @@ import java.util.Map;
 public class TypeParser {
 
 	public final Map<Class, StringParser> parsers;
+
+	private MethodCache methodCache = new MethodCache();
 
 	public TypeParser() {
 		parsers = new HashMap<>();
@@ -102,18 +108,20 @@ public class TypeParser {
 			return (T) Enum.valueOf((Class<Enum>) clazz.asSubclass(Enum.class), input.trim());
 		} else if (containsStringConstructor(clazz)) {
 			return clazz.getDeclaredConstructor(String.class).newInstance(input);
-		} else {
-			Method method;
+		} 
+
+		Optional<Method> method = methodCache.find(clazz, "parse", String.class);
+		if(!method.isPresent()){
+			method = methodCache.find(clazz, "parse", CharSequence.class);
+		}
+		if(method.isPresent()){
 			try {
-				method = clazz.getMethod("parse", String.class);
-				return (T) method.invoke(clazz, input);
-			} catch (NoSuchMethodException e) { // NOSONAR
-				// not available
-				throw new ParserException(String.format("Cannot parse to %s : %s", clazz.getName(), input));
+				return (T) method.get().invoke(clazz, input);
 			} catch (IllegalAccessException | IllegalArgumentException | SecurityException | InvocationTargetException e) {
 				throw new IllegalStateException(e);
 			}
 		}
+		throw new ParserException(String.format("Cannot parse to %s : %s", clazz.getName(), input));
 	}
 
 	private static <T extends Serializable> boolean isEnum(Class<T> clazz) {
@@ -123,8 +131,7 @@ public class TypeParser {
 	private boolean containsStringConstructor(Class<?> clazz) throws NoSuchMethodException {
 		boolean result = false;
 		for (Constructor constructor : clazz.getDeclaredConstructors()) {
-
-			if (constructor.getParameterTypes().length == 1 && constructor.getParameterTypes()[0] == String.class) {
+			if (!Modifier.isPrivate(constructor.getModifiers()) && constructor.getParameterTypes().length == 1 && constructor.getParameterTypes()[0] == String.class) {
 				result = true;
 			}
 		}

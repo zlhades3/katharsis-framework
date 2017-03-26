@@ -68,7 +68,7 @@ public class DocumentMapperUtil {
 
 	public String getIdString(Object entity, ResourceInformation resourceInformation) {
 		ResourceField idField = resourceInformation.getIdField();
-		Object sourceId = PropertyUtils.getProperty(entity, idField.getUnderlyingName());
+		Object sourceId = idField.getAccessor().getValue(entity);
 		return resourceInformation.toIdString(sourceId);
 	}
 

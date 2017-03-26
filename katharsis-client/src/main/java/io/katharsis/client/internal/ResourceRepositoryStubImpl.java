@@ -95,7 +95,7 @@ public class ResourceRepositoryStubImpl<T, I extends Serializable> extends Abstr
 			return null;
 		} else {
 			ResourceField idField = resourceInformation.getIdField();
-			return PropertyUtils.getProperty(entity, idField.getUnderlyingName());
+			return idField.getAccessor().getValue(entity);
 		}
 	}
 
