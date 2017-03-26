@@ -7,6 +7,7 @@ import java.util.Objects;
 import io.katharsis.core.internal.utils.PreconditionUtil;
 import io.katharsis.resource.annotations.LookupIncludeBehavior;
 import io.katharsis.resource.information.ResourceField;
+import io.katharsis.resource.information.ResourceFieldAccess;
 import io.katharsis.resource.information.ResourceFieldAccessor;
 import io.katharsis.resource.information.ResourceFieldType;
 import io.katharsis.resource.information.ResourceInformation;
@@ -36,13 +37,18 @@ public class ResourceFieldImpl implements ResourceField {
 	private ResourceInformation parentResourceInformation;
 	
 	private ResourceFieldAccessor accessor;
-
+	
+	private ResourceFieldAccess access;
+	
 	public ResourceFieldImpl(String jsonName, String underlyingName, ResourceFieldType resourceFieldType, Class<?> type, Type genericType, String oppositeResourceType) {
-		this(jsonName, underlyingName, resourceFieldType, type, genericType, oppositeResourceType, null, true, false, LookupIncludeBehavior.NONE);
+		this(jsonName, underlyingName, resourceFieldType, type, genericType, 
+				oppositeResourceType, null, true, false, LookupIncludeBehavior.NONE,
+				new ResourceFieldAccess(true, true));
 	}
 
 	public ResourceFieldImpl(String jsonName, String underlyingName, ResourceFieldType resourceFieldType, Class<?> type, Type genericType, String oppositeResourceType, String oppositeName, boolean lazy,
-			boolean includeByDefault, LookupIncludeBehavior lookupIncludeBehavior) {
+			boolean includeByDefault, LookupIncludeBehavior lookupIncludeBehavior,
+			ResourceFieldAccess access) {
 		this.jsonName = jsonName;
 		this.underlyingName = underlyingName;
 		this.resourceFieldType = resourceFieldType;
@@ -53,6 +59,7 @@ public class ResourceFieldImpl implements ResourceField {
 		this.lookupIncludeBehavior = lookupIncludeBehavior;
 		this.oppositeName = oppositeName;
 		this.oppositeResourceType = oppositeResourceType;
+		this.access = access;
 	}
 
 	public ResourceFieldType getResourceFieldType() {
@@ -121,7 +128,8 @@ public class ResourceFieldImpl implements ResourceField {
 			return false;
 		ResourceFieldImpl that = (ResourceFieldImpl) o;
 		return Objects.equals(jsonName, that.jsonName) && Objects.equals(underlyingName, that.underlyingName) && Objects.equals(type, that.type) && Objects.equals(lookupIncludeBehavior, that.lookupIncludeBehavior)
-				&& Objects.equals(includeByDefault, that.includeByDefault) && Objects.equals(genericType, that.genericType) && Objects.equals(lazy, that.lazy);
+				&& Objects.equals(includeByDefault, that.includeByDefault) && Objects.equals(genericType, that.genericType) && Objects.equals(lazy, that.lazy)
+				&& Objects.equals(access, that.access);
 	}
 
 	@Override
@@ -167,5 +175,10 @@ public class ResourceFieldImpl implements ResourceField {
 
 	public boolean isCollection() {
 		return Iterable.class.isAssignableFrom(getType());
+	}
+
+	@Override
+	public ResourceFieldAccess getAccess() {
+		return access;
 	}
 }
