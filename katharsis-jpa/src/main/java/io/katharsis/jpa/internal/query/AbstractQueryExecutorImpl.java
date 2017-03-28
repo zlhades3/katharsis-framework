@@ -177,7 +177,11 @@ public abstract class AbstractQueryExecutorImpl<T> implements JpaQueryExecutor<T
 		if (!fetchPaths.isEmpty()) {
 			EntityGraphBuilder builder;
 			try {
-				// avoid compile-time dependency
+				// avoid compile-time dependency since EntityGraph is not used by default
+				// only when requested in API (by adding fetchPaths). Some more advanced
+				// customizations of JPA module likely will make use of it, but basic features
+				// work without it, meaning that katharsis-jpa also works in older JPA implementations
+				// not supporting the fairly new EntityGraph
 				builder = (EntityGraphBuilder) Class.forName(ENTITY_GRAPH_BUILDER_IMPL).newInstance();
 			} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
 				throw new IllegalStateException(e);
