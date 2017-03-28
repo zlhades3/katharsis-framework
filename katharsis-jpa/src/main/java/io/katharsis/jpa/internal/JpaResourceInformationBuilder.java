@@ -2,6 +2,8 @@ package io.katharsis.jpa.internal;
 
 import java.io.Serializable;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -297,6 +299,17 @@ public class JpaResourceInformationBuilder implements ResourceInformationBuilder
 		String underlyingName = attr.getName();
 		Class<?> type = attr.getType().getImplementationClass();
 		Type genericType = attr.getType().getImplementationType();
+		
+		// meta model does not differentiate between long and Long, int and Integer etc. correct this here
+		Method getter = ClassUtils.findGetter(meta.getImplementationClass(), underlyingName);
+		Field field = ClassUtils.findClassField(meta.getImplementationClass(), underlyingName);
+		if(getter != null){
+			type = getter.getReturnType();
+			genericType = getter.getGenericReturnType();
+		}else if(field != null){
+			type = field.getType();
+			genericType = field.getGenericType();
+		}
 
 		Collection<Annotation> annotations = attr.getAnnotations();
 

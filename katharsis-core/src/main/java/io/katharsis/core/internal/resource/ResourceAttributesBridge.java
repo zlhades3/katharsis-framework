@@ -70,8 +70,8 @@ public class ResourceAttributesBridge<T> {
         Optional<ResourceField> staticField = findStaticField(propertyName);
         try{
 	        if (staticField.isPresent()) {
-	            String underlyingName = staticField.get().getUnderlyingName();
-	            Type valueType = staticField.get().getGenericType();
+	        	ResourceField field = staticField.get();
+	            Type valueType = field.getGenericType();
 		            Object value;
 		            if(valueNode != null){
 		            	JavaType jacksonValueType = objectMapper.getTypeFactory().constructType(valueType);
@@ -80,7 +80,7 @@ public class ResourceAttributesBridge<T> {
 		            }else{
 		            	value = null;
 		            }
-		            PropertyUtils.setProperty(instance, underlyingName, value);
+		            field.getAccessor().setValue(instance, value);
 	        } else if(jsonAnySetter != null){
 	            // Needed for JsonIgnore and dynamic attributes
 	        	Object value = objectMapper.reader().forType(Object.class).readValue(valueNode);
