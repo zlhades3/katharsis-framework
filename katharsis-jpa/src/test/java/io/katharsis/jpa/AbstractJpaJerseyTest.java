@@ -141,7 +141,9 @@ public abstract class AbstractJpaJerseyTest extends JerseyTest {
 			for (ManagedType<?> managedType : managedTypes) {
 				Class<?> managedJavaType = managedType.getJavaType();
 				if (managedJavaType.getAnnotation(Entity.class) != null && managedJavaType != CountryTranslationEntity.class) {
-					module.addRepository(JpaRepositoryConfig.builder(managedJavaType).build());
+					if(!module.hasRepository(managedJavaType)){
+						module.addRepository(JpaRepositoryConfig.builder(managedJavaType).build());
+					}
 				}
 			}
 			

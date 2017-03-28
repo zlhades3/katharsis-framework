@@ -24,16 +24,15 @@ public class MetaType extends MetaElement {
 	}
 
 	public void setImplementationType(Type implementationType) {
+		if(implementationType == long.class){
+			throw new IllegalArgumentException();
+		}
 		this.implementationType = implementationType;
 	}
 
 	public Type getImplementationType() {
 		return implementationType;
 	}
-
-//	public Object fromString(String value) {
-//		throw new UnsupportedOperationException();
-//	}
 
 	@JsonIgnore
 	public boolean isCollection() {

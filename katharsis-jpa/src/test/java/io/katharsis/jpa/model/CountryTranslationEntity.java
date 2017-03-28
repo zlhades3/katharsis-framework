@@ -1,6 +1,5 @@
 package io.katharsis.jpa.model;
 
-import javax.persistence.Column;
 import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.validation.constraints.NotNull;
@@ -11,7 +10,6 @@ public class CountryTranslationEntity {
 	@EmbeddedId
 	private CountryTranslationPK countryTranslationPk;
 
-	@Column(name = "txt", insertable = false, updatable = false)
 	@NotNull
 	private String txt;
 

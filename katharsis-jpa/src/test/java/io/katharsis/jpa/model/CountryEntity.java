@@ -10,6 +10,8 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 public class CountryEntity {
 
@@ -22,6 +24,7 @@ public class CountryEntity {
 	private Boolean ctlActCd;
 
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "countryTranslationPk.country", cascade = CascadeType.PERSIST)
+	@JsonIgnore
 	private List<CountryTranslationEntity> translations;
 
 	public String getCountryCd() {

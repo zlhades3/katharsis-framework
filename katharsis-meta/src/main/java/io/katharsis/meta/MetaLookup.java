@@ -239,21 +239,15 @@ public class MetaLookup {
 			}
 			return enumType;
 		}
+		clazz = mapPrimitiveType(clazz);
 		if (isPrimitiveType(clazz)) {
-			String id;
-			if(clazz == int.class){
-				// all the others match lower/upper case
-				id = BASE_ID_PREFIX + firstToLower(Integer.class.getSimpleName());
-			}else{
-				id = BASE_ID_PREFIX + firstToLower(clazz.getSimpleName());
-			}
-			
+			String id = BASE_ID_PREFIX + firstToLower(clazz.getSimpleName());
 
 			MetaPrimitiveType primitiveType = (MetaPrimitiveType) idElementMap.get(id);
 			if (primitiveType == null) {
 				primitiveType = new MetaPrimitiveType();
 				primitiveType.setElementType(primitiveType);
-				primitiveType.setImplementationType(type);
+				primitiveType.setImplementationType(clazz);
 				primitiveType.setName(firstToLower(clazz.getSimpleName()));
 				primitiveType.setId(id);
 			}
@@ -270,6 +264,31 @@ public class MetaLookup {
 			return arrayType;
 		}
 		return null;
+	}
+
+	private Class<?> mapPrimitiveType(Class<?> clazz) {
+		if(clazz == byte.class){
+			return Byte.class;
+		}
+		if(clazz == short.class){
+			return Short.class;
+		}
+		if(clazz == int.class){
+			return Integer.class;
+		}
+		if(clazz == long.class){
+			return Long.class;
+		}
+		if(clazz == float.class){
+			return float.class;
+		}
+		if(clazz == double.class){
+			return Double.class;
+		}
+		if(clazz == boolean.class){
+			return boolean.class;
+		}
+		return clazz;
 	}
 
 	private static String firstToLower(String name) {

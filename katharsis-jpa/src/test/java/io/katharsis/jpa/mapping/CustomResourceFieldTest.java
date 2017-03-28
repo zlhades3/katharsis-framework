@@ -6,9 +6,14 @@ import java.util.concurrent.Callable;
 
 import javax.persistence.EntityManager;
 
+import org.apache.http.HttpStatus;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.katharsis.core.internal.resource.ResourceFieldImpl;
 import io.katharsis.jpa.AbstractJpaJerseyTest;
@@ -28,11 +33,13 @@ import io.katharsis.resource.information.ResourceField;
 import io.katharsis.resource.information.ResourceFieldAccess;
 import io.katharsis.resource.information.ResourceFieldAccessor;
 import io.katharsis.resource.information.ResourceFieldType;
+import io.katharsis.rs.type.JsonApiMediaType;
 import io.restassured.RestAssured;
+import io.restassured.response.Response;
 
 /**
- * Example of how to add a custom ResourceField and in turn change the from
- * an entity resulting resource.
+ * Example of how to add a custom ResourceField and in turn change the from an
+ * entity resulting resource.
  */
 public class CustomResourceFieldTest extends AbstractJpaJerseyTest {
 
@@ -60,6 +67,14 @@ public class CustomResourceFieldTest extends AbstractJpaJerseyTest {
 				ch.setCountryCd("ch");
 				ch.setCtlActCd(true);
 				em.persist(ch);
+
+				CountryTranslationEntity chDe = new CountryTranslationEntity();
+				CountryTranslationPK chDePk = new CountryTranslationPK();
+				chDePk.setCountry(ch);
+				chDePk.setLang(de);
+				chDe.setCountryTranslationPk(chDePk);
+				chDe.setTxt("Schweiz");
+				em.persist(chDe);
 
 				CountryTranslationEntity chEn = new CountryTranslationEntity();
 				CountryTranslationPK chEnPk = new CountryTranslationPK();
@@ -97,8 +112,7 @@ public class CustomResourceFieldTest extends AbstractJpaJerseyTest {
 							boolean lazy = false;
 							ResourceFieldAccess access = new ResourceFieldAccess(true, true, false, false);
 
-							ResourceFieldImpl field = new ResourceFieldImpl(name, name, resourceFieldType, type, type,
-									null, null, lazy, false, null, access);
+							ResourceFieldImpl field = new ResourceFieldImpl(name, name, resourceFieldType, type, type, null, null, lazy, false, null, access);
 							field.setAccessor(new ResourceFieldAccessor() {
 
 								@Override
@@ -132,8 +146,7 @@ public class CustomResourceFieldTest extends AbstractJpaJerseyTest {
 									translation.setTxt((String) fieldValue);
 								}
 
-								private CountryTranslationEntity getTranslation(
-										List<CountryTranslationEntity> translations, String language) {
+								private CountryTranslationEntity getTranslation(List<CountryTranslationEntity> translations, String language) {
 									for (CountryTranslationEntity translation : translations) {
 										CountryTranslationPK translationPk = translation.getCountryTranslationPk();
 										String langCd = translationPk.getLang().getLangCd();
@@ -149,33 +162,27 @@ public class CustomResourceFieldTest extends AbstractJpaJerseyTest {
 					}
 					return fields;
 				}
-
-				protected boolean isIgnored(MetaAttribute attr) {
-					// remove translations relationship as it gets inlined as
-					// fields
-					return super.isIgnored(attr) || attr.getName().equals("translations");
-				}
-
 			});
 		}
 	}
 
 	@Test
 	public void test() throws InstantiationException, IllegalAccessException {
-		
 		String url = getBaseUri() + "country/ch";
-		io.restassured.response.Response response = RestAssured.get(url);
-		Assert.assertEquals(200, response.getStatusCode());
-		System.out.println("body: " + response.body().asString());
-//
-//		response.then().assertThat().body("errors[0].status", Matchers.equalTo("403"));
-//
-//		// check filters
-//		ArgumentCaptor<DocumentFilterContext> contexts = ArgumentCaptor.forClass(DocumentFilterContext.class);
-//		Mockito.verify(filter, Mockito.times(1)).filter(contexts.capture(), Mockito.any(DocumentFilterChain.class));
-//		DocumentFilterContext actionContext = contexts.getAllValues().get(0);
-//		Assert.assertEquals("GET", actionContext.getMethod());
-//		Assert.assertTrue(actionContext.getJsonPath() instanceof ActionPath);
-		
+		io.restassured.response.Response getResponse = RestAssured.get(url);
+		Assert.assertEquals(200, getResponse.getStatusCode());
+
+		getResponse.then().assertThat().body("data.attributes.deText", Matchers.equalTo("Schweiz"));
+		getResponse.then().assertThat().body("data.attributes.enText", Matchers.equalTo("Switzerland"));
+
+		String patchData = "{'data':{'id':'ch','type':'country','attributes':{'deText':'Test','enText':'Switzerland','ctlActCd':true}}}".replaceAll("'", "\"");
+
+		Response patchResponse = RestAssured.given().body(patchData.getBytes()).header("content-type", JsonApiMediaType.APPLICATION_JSON_API).when().patch(url);
+		patchResponse.then().statusCode(HttpStatus.SC_OK);
+
+		getResponse = RestAssured.get(url);
+		Assert.assertEquals(200, getResponse.getStatusCode());
+		getResponse.then().assertThat().body("data.attributes.deText", Matchers.equalTo("Test"));
+		getResponse.then().assertThat().body("data.attributes.enText", Matchers.equalTo("Switzerland"));
 	}
 }

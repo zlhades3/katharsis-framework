@@ -560,4 +560,12 @@ public class JpaModule implements Module {
 	public MetaLookup getResourceMetaLookup() {
 		return resourceMetaLookup;
 	}
+
+	/**
+	 * @param resourceClass
+	 * @return true if a repository for the given resourceClass is managed by this module.
+	 */
+	public boolean hasRepository(Class<?> resourceClass) {
+		return repositoryConfigurationMap.containsKey(resourceClass);
+	}
 }
