@@ -5,7 +5,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.List;
-import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -15,7 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 
 import io.katharsis.core.internal.utils.ClassUtils;
-import io.katharsis.core.internal.utils.PropertyUtils;
 import io.katharsis.errorhandling.exception.InvalidResourceException;
 import io.katharsis.errorhandling.exception.ResourceException;
 import io.katharsis.resource.information.ResourceField;
@@ -64,18 +62,17 @@ public class ResourceAttributesBridge<T> {
         Optional<ResourceField> optStaticField = findStaticField(propertyName);
         try{
 	        if (optStaticField.isPresent()) {
-	        	ResourceField staticField = optStaticField.get();
-	            String underlyingName = staticField.getUnderlyingName();
-	            Type valueType = staticField.getGenericType();
-		            Object value;
-		            if(valueNode != null){
-		            	JavaType jacksonValueType = objectMapper.getTypeFactory().constructType(valueType);
-		            	ObjectReader reader = objectMapper.reader().forType(jacksonValueType);
-		            	value = reader.readValue(valueNode);
-		            }else{
-		            	value = null;
-		            }
-		            PropertyUtils.setProperty(instance, underlyingName, value);
+	        	ResourceField field = optStaticField.get();
+	            Type valueType = field.getGenericType();
+	            Object value;
+	            if(valueNode != null){
+	            	JavaType jacksonValueType = objectMapper.getTypeFactory().constructType(valueType);
+	            	ObjectReader reader = objectMapper.reader().forType(jacksonValueType);
+	            	value = reader.readValue(valueNode);
+	            }else{
+	            	value = null;
+	            }
+	            field.getAccessor().setValue(instance, value);
 	        } else if(jsonAnySetter != null){
 	            // Needed for JsonIgnore and dynamic attributes
 	        	Object value = objectMapper.reader().forType(Object.class).readValue(valueNode);

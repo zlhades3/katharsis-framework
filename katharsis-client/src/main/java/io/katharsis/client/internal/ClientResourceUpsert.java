@@ -117,7 +117,7 @@ class ClientResourceUpsert extends ResourceUpsert {
 			ObjectReader linksMapper = objectMapper.readerFor(linksClass);
 			try {
 				Object links = linksMapper.readValue(linksNode);
-				PropertyUtils.setProperty(instance, linksField.getUnderlyingName(), links);
+				linksField.getAccessor().setValue(instance, links);
 			} catch (IOException e) {
 				throw new ResponseBodyException("failed to parse links information", e);
 			}
@@ -134,7 +134,7 @@ class ClientResourceUpsert extends ResourceUpsert {
 			ObjectReader metaMapper = objectMapper.readerFor(metaClass);
 			try {
 				Object meta = metaMapper.readValue(metaNode);
-				PropertyUtils.setProperty(instance, metaField.getUnderlyingName(), meta);
+				metaField.getAccessor().setValue(instance, meta);
 			} catch (IOException e) {
 				throw new ResponseBodyException("failed to parse links information", e);
 			}
@@ -175,7 +175,7 @@ class ClientResourceUpsert extends ResourceUpsert {
 				if (relatedNode != null) {
 					String url = relatedNode.asText().trim();
 					Object proxy = proxyFactory.createCollectionProxy(elementType, collectionClass, url);
-					PropertyUtils.setProperty(newResource, fieldName, proxy);
+					field.getAccessor().setValue(newResource, proxy);
 				}
 			}
 		} else {

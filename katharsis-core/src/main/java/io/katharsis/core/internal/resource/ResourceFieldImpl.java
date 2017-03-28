@@ -163,6 +163,11 @@ public class ResourceFieldImpl implements ResourceField {
 		return accessor;
 	}
 	
+	public void setAccessor(ReflectionFieldAccessor accessor) {
+		// TODO to be eliminated by a builder pattern soon
+		this.accessor = accessor;
+	}
+	
 	public void setResourceInformation(ResourceInformation resourceInformation) {
 		this.accessor = new ReflectionFieldAccessor(resourceInformation.getResourceClass(), underlyingName, type);
 		this.parentResourceInformation = resourceInformation;

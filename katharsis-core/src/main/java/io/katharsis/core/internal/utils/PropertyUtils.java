@@ -306,7 +306,8 @@ public class PropertyUtils {
     public static Object prepareValue(Object value, Class<?> fieldClass) {
         if (Set.class.isAssignableFrom(fieldClass) && value instanceof List) {
             return new LinkedHashSet<>((List) value);
-        } else if (List.class.isAssignableFrom(fieldClass) && value instanceof Set) {
+        }
+        if (List.class.isAssignableFrom(fieldClass) && value instanceof Set) {
             return new LinkedList<>((Set) value);
         }
         return value;

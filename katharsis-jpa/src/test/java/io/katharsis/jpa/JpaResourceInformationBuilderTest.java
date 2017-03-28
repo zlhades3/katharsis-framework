@@ -75,6 +75,15 @@ public class JpaResourceInformationBuilderTest {
 		}
 		Assert.assertTrue(found);
 	}
+	
+	@Test
+	public void testPrimitiveTypesProperlyRecognized(){
+		ResourceInformation info = builder.build(TestEntity.class);
+		ResourceField field = info.findAttributeFieldByName("longValue");
+		Assert.assertNotNull(field);
+		Assert.assertEquals(long.class, field.getType());
+		Assert.assertEquals(long.class, field.getGenericType());
+	}
 
 	@Test
 	public void testIdAccess(){

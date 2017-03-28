@@ -67,8 +67,9 @@ public abstract class ResourceUpsert extends BaseController {
             String id = dataBody.getId();
 
             Serializable castedId = resourceInformation.parseIdString(id);
-            PropertyUtils.setProperty(instance, resourceInformation.getIdField()
-                    .getUnderlyingName(), castedId);
+            
+            ResourceField idField = resourceInformation.getIdField();
+            idField.getAccessor().setValue(instance, castedId);
         }
     }
 
@@ -339,7 +340,7 @@ public abstract class ResourceUpsert extends BaseController {
 	        } else {
 	            relationObject = null;
 	        }
-	        PropertyUtils.setProperty(newResource, relationshipFieldByName.getUnderlyingName(), relationObject);
+	        relationshipFieldByName.getAccessor().setValue(newResource, relationObject);
     	}
     }
 
