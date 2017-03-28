@@ -31,6 +31,7 @@ import io.katharsis.meta.model.MetaSetType;
 import io.katharsis.meta.model.MetaType;
 import io.katharsis.meta.provider.MetaProvider;
 import io.katharsis.meta.provider.MetaProviderContext;
+import io.katharsis.module.Module.ModuleContext;
 
 public class MetaLookup {
 
@@ -56,10 +57,18 @@ public class MetaLookup {
 
 	private boolean discovered;
 
+	private ModuleContext moduleContext;
+
 	public MetaLookup() {
 		registerPrimitiveType(String.class);
 		registerPrimitiveType(Number.class);
 		registerPrimitiveType(Boolean.class);
+		registerPrimitiveType(Integer.class);
+		registerPrimitiveType(Short.class);
+		registerPrimitiveType(Byte.class);
+		registerPrimitiveType(Long.class);
+		registerPrimitiveType(Float.class);
+		registerPrimitiveType(Double.class);
 		registerPrimitiveType(UUID.class);
 		registerPrimitiveType(Date.class);
 		registerPrimitiveType(Timestamp.class);
@@ -87,11 +96,20 @@ public class MetaLookup {
 			public MetaLookup getLookup() {
 				return MetaLookup.this;
 			}
+
+			@Override
+			public ModuleContext getModuleContext() {
+				return moduleContext;
+			}
 		};
 
 		putIdMapping("io.katharsis.jpa.meta", "io.katharsis.jpa");
 		putIdMapping("io.katharsis.meta.model", "io.katharsis.meta");
 		putIdMapping("io.katharsis.meta.model.resource", "io.katharsis.meta.resource");
+	}
+	
+	public void setModuleContext(ModuleContext moduleContext){
+		this.moduleContext = moduleContext;
 	}
 
 	public Map<String, MetaElement> getMetaById() {
@@ -104,6 +122,7 @@ public class MetaLookup {
 
 	public void addProvider(MetaProvider provider) {
 		if (!providers.contains(provider)) {
+			provider.init(context);
 			providers.add(provider);
 			for (MetaProvider dependency : provider.getDependencies()) {
 				addProvider(dependency);
@@ -221,15 +240,21 @@ public class MetaLookup {
 			return enumType;
 		}
 		if (isPrimitiveType(clazz)) {
-			// FIXME should long + Long really be merged???
-			String id = BASE_ID_PREFIX + clazz.getSimpleName().toLowerCase();
+			String id;
+			if(clazz == int.class){
+				// all the others match lower/upper case
+				id = BASE_ID_PREFIX + firstToLower(Integer.class.getSimpleName());
+			}else{
+				id = BASE_ID_PREFIX + firstToLower(clazz.getSimpleName());
+			}
+			
 
 			MetaPrimitiveType primitiveType = (MetaPrimitiveType) idElementMap.get(id);
 			if (primitiveType == null) {
 				primitiveType = new MetaPrimitiveType();
 				primitiveType.setElementType(primitiveType);
 				primitiveType.setImplementationType(type);
-				primitiveType.setName(clazz.getSimpleName().toLowerCase());
+				primitiveType.setName(firstToLower(clazz.getSimpleName()));
 				primitiveType.setId(id);
 			}
 			return primitiveType;
@@ -247,10 +272,14 @@ public class MetaLookup {
 		return null;
 	}
 
+	private static String firstToLower(String name) {
+		return Character.toLowerCase(name.charAt(0)) + name.substring(1);
+	}
+
 	private <T extends MetaElement> T allocateMetaFromFactory(Type type, Class<? extends MetaElement> metaClass) {
 		for (MetaProvider factory : providers) {
 			if (factory.accept(type, metaClass)) {
-				return (T) factory.createElement(type, context);
+				return (T) factory.createElement(type);
 			}
 		}
 		return null;
@@ -448,7 +477,7 @@ public class MetaLookup {
 		try {
 			if (!discovered) {
 				for (MetaProvider provider : providers) {
-					provider.discoverElements(context);
+					provider.discoverElements();
 				}
 				discovered = true;
 			}
@@ -474,7 +503,7 @@ public class MetaLookup {
 		}
 
 		for (MetaProvider initializer : providers) {
-			initializer.onInitializing(context, element);
+			initializer.onInitializing(element);
 		}
 
 		for (MetaElement child : element.getChildren()) {
@@ -482,7 +511,7 @@ public class MetaLookup {
 		}
 
 		for (MetaProvider initializer : providers) {
-			initializer.onInitialized(context, element);
+			initializer.onInitialized(element);
 		}
 		LOGGER.debug("added {}", element.getId());
 	}

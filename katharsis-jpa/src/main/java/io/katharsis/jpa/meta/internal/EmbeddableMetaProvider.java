@@ -14,7 +14,6 @@ import io.katharsis.jpa.meta.MetaJpaDataObject;
 import io.katharsis.meta.model.MetaAttribute;
 import io.katharsis.meta.model.MetaDataObject;
 import io.katharsis.meta.model.MetaElement;
-import io.katharsis.meta.provider.MetaProviderContext;
 
 public class EmbeddableMetaProvider extends AbstractJpaDataObjectProvider<MetaEmbeddable> {
 
@@ -34,7 +33,7 @@ public class EmbeddableMetaProvider extends AbstractJpaDataObjectProvider<MetaEm
 	}
 
 	@Override
-	public MetaEmbeddable createElement(Type type, MetaProviderContext context) {
+	public MetaEmbeddable createElement(Type type) {
 		Class<?> rawClazz = ClassUtils.getRawType(type);
 		Class<?> superClazz = rawClazz.getSuperclass();
 		MetaElement superMeta = null;

@@ -16,14 +16,23 @@ import java.lang.annotation.Target;
 @Target({ ElementType.FIELD, ElementType.METHOD })
 public @interface JsonApiField {
 
+	/**
+	 * @return true if the attribute can be sorted.
+	 */
+	boolean sortable() default true;
 
 	/**
-	 * @return true if the field can be set with a POST request.
+	 * @return true if the attribute can be filtered.
+	 */
+	boolean filterable() default true;
+
+	/**
+	 * @return true if the attribute can be set with a POST request.
 	 */
 	boolean postable() default true;
 
 	/**
-	 * @return true if the field can be changed with a PATCH request.
+	 * @return true if the attribute can be changed with a PATCH request.
 	 */
 	boolean patchable() default true;
 

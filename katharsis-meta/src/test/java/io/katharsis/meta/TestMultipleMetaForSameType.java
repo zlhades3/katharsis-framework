@@ -11,6 +11,7 @@ import io.katharsis.meta.mock.model.Schedule;
 import io.katharsis.meta.model.MetaDataObject;
 import io.katharsis.meta.model.MetaElement;
 import io.katharsis.meta.model.resource.MetaResource;
+import io.katharsis.meta.provider.MetaProvider;
 import io.katharsis.meta.provider.MetaProviderBase;
 import io.katharsis.meta.provider.MetaProviderContext;
 import io.katharsis.meta.provider.resource.ResourceMetaProvider;
@@ -30,6 +31,7 @@ public class TestMultipleMetaForSameType extends AbstractMetaTest {
 		//provider.setResourceRegistry(boot.getResourceRegistry());
 
 		lookup = new MetaLookup();
+		lookup.setModuleContext(boot.getModuleRegistry().getContext());
 		lookup.addProvider(provider);
 		lookup.addProvider(new DummyMetaProvider());
 
@@ -79,7 +81,7 @@ public class TestMultipleMetaForSameType extends AbstractMetaTest {
 		}
 
 		@Override
-		public MetaElement createElement(Type type, MetaProviderContext context) {
+		public MetaElement createElement(Type type) {
 			Class<?> rawType = ClassUtils.getRawType(type);
 			MetaDummyDataObject dummy = new MetaDummyDataObject();
 			dummy.setName(rawType.getSimpleName());

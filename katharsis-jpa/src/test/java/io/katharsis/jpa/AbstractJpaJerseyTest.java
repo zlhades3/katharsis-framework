@@ -1,10 +1,13 @@
 package io.katharsis.jpa;
 
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
+import javax.persistence.Entity;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.metamodel.ManagedType;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
@@ -21,6 +24,9 @@ import io.katharsis.client.KatharsisClient;
 import io.katharsis.client.http.okhttp.OkHttpAdapter;
 import io.katharsis.client.http.okhttp.OkHttpAdapterListenerBase;
 import io.katharsis.core.properties.KatharsisProperties;
+import io.katharsis.jpa.meta.JpaMetaProvider;
+import io.katharsis.jpa.model.CountryTranslationEntity;
+import io.katharsis.jpa.model.TestEntity;
 import io.katharsis.jpa.query.AbstractJpaTest;
 import io.katharsis.jpa.query.querydsl.QuerydslQueryFactory;
 import io.katharsis.jpa.util.EntityManagerProducer;
@@ -30,6 +36,10 @@ import io.katharsis.legacy.locator.SampleJsonServiceLocator;
 import io.katharsis.legacy.queryParams.DefaultQueryParamsParser;
 import io.katharsis.legacy.queryParams.QueryParamsBuilder;
 import io.katharsis.meta.MetaModule;
+import io.katharsis.meta.model.MetaEnumType;
+import io.katharsis.meta.model.resource.MetaJsonObject;
+import io.katharsis.meta.model.resource.MetaResource;
+import io.katharsis.meta.model.resource.MetaResourceBase;
 import io.katharsis.meta.provider.resource.ResourceMetaProvider;
 import io.katharsis.queryspec.DefaultQuerySpecDeserializer;
 import io.katharsis.rs.KatharsisFeature;
@@ -45,6 +55,8 @@ public abstract class AbstractJpaJerseyTest extends JerseyTest {
 
 	private boolean useQuerySpec = true;
 
+	protected MetaModule metaModule;
+
 	@Before
 	public void setup() {
 		client = new KatharsisClient(getBaseUri().toString());
@@ -53,11 +65,11 @@ public abstract class AbstractJpaJerseyTest extends JerseyTest {
 		JpaModule module = JpaModule.newClientModule();
 		setupModule(module, false);
 		client.addModule(module);
-		
+
 		MetaModule metaModule = MetaModule.create();
 		metaModule.addMetaProvider(new ResourceMetaProvider());
 		client.addModule(metaModule);
-		
+
 		setNetworkTimeout(client, 10000, TimeUnit.SECONDS);
 	}
 
@@ -71,7 +83,7 @@ public abstract class AbstractJpaJerseyTest extends JerseyTest {
 			}
 		});
 	}
-	
+
 	protected void setupModule(JpaModule module, boolean server) {
 	}
 
@@ -116,22 +128,36 @@ public abstract class AbstractJpaJerseyTest extends JerseyTest {
 
 			KatharsisFeature feature;
 			if (useQuerySpec) {
-				feature = new KatharsisFeature(new ObjectMapper(), new QueryParamsBuilder(new DefaultQueryParamsParser()),
-						new SampleJsonServiceLocator());
-			}
-			else {
-				feature = new KatharsisFeature(new ObjectMapper(), new DefaultQuerySpecDeserializer(),
-						new SampleJsonServiceLocator());
+				feature = new KatharsisFeature(new ObjectMapper(), new QueryParamsBuilder(new DefaultQueryParamsParser()), new SampleJsonServiceLocator());
+			} else {
+				feature = new KatharsisFeature(new ObjectMapper(), new DefaultQuerySpecDeserializer(), new SampleJsonServiceLocator());
 			}
 
-			JpaModule module = JpaModule.newServerModule(emFactory, em, transactionRunner);
+			JpaModule module = JpaModule.newServerModule(em, transactionRunner);
 			module.setQueryFactory(QuerydslQueryFactory.newInstance());
 			setupModule(module, true);
-			feature.addModule(module);
 			
-			MetaModule metaModule = MetaModule.create();
+			Set<ManagedType<?>> managedTypes = emFactory.getMetamodel().getManagedTypes();
+			for (ManagedType<?> managedType : managedTypes) {
+				Class<?> managedJavaType = managedType.getJavaType();
+				if (managedJavaType.getAnnotation(Entity.class) != null && managedJavaType != CountryTranslationEntity.class) {
+					module.addRepository(JpaRepositoryConfig.builder(managedJavaType).build());
+				}
+			}
+			
+			feature.addModule(module);
+
+			metaModule = MetaModule.create();
 			metaModule.addMetaProvider(new ResourceMetaProvider());
+			metaModule.addMetaProvider(new JpaMetaProvider(emFactory));
 			feature.addModule(metaModule);
+
+			String managementId = "io.katharsis.jpa.resource";
+			String dataId = TestEntity.class.getPackage().getName();
+			metaModule.putIdMapping(dataId, MetaJsonObject.class, managementId);
+			metaModule.putIdMapping(dataId, MetaResourceBase.class, managementId);
+			metaModule.putIdMapping(dataId, MetaResource.class, managementId);
+			metaModule.putIdMapping(dataId, MetaEnumType.class, managementId);
 
 			register(feature);
 

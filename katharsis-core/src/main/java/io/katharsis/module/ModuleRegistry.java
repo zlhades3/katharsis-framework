@@ -26,6 +26,7 @@ import io.katharsis.legacy.registry.DefaultResourceInformationBuilderContext;
 import io.katharsis.legacy.registry.RepositoryInstanceBuilder;
 import io.katharsis.legacy.repository.annotations.JsonApiRelationshipRepository;
 import io.katharsis.legacy.repository.annotations.JsonApiResourceRepository;
+import io.katharsis.module.Module.ModuleContext;
 import io.katharsis.repository.RelationshipRepositoryV2;
 import io.katharsis.repository.ResourceRepositoryV2;
 import io.katharsis.repository.decorate.RelationshipRepositoryDecorator;
@@ -204,6 +205,11 @@ public class ModuleRegistry {
 		@Override
 		public TypeParser getTypeParser() {
 			return typeParser;
+		}
+
+		@Override
+		public ResourceInformationBuilder getResourceInformationBuilder() {
+			return ModuleRegistry.this.getResourceInformationBuilder();
 		}
 	}
 
@@ -613,5 +619,9 @@ public class ModuleRegistry {
 
 	public TypeParser getTypeParser() {
 		return typeParser;
+	}
+
+	public ModuleContext getContext() {
+		return new ModuleContextImpl();
 	}
 }

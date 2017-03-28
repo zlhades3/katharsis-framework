@@ -44,7 +44,7 @@ public class DtoMappingTest extends AbstractJpaJerseyTest {
 	@Before
 	public void setup() {
 		super.setup();
-		testRepo = client.getQuerySpecRepository(TestEntity.class);
+		testRepo = client.getRepositoryForType(TestEntity.class);
 	}
 
 	@Override

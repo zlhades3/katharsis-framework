@@ -18,8 +18,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.katharsis.core.internal.registry.ResourceRegistryImpl;
 import io.katharsis.jpa.JpaModule;
 import io.katharsis.jpa.meta.JpaMetaProvider;
+import io.katharsis.jpa.model.CountryEntity;
+import io.katharsis.jpa.model.CountryTranslationEntity;
 import io.katharsis.jpa.model.JoinedTableBaseEntity;
 import io.katharsis.jpa.model.JoinedTableChildEntity;
+import io.katharsis.jpa.model.LangEntity;
 import io.katharsis.jpa.model.OtherRelatedEntity;
 import io.katharsis.jpa.model.RelatedEntity;
 import io.katharsis.jpa.model.SingleTableBaseEntity;
@@ -198,6 +201,9 @@ public abstract class AbstractJpaTest {
 		clear(em, factory.query(RelatedEntity.class).buildExecutor().getResultList());
 		clear(em, factory.query(TestEntity.class).buildExecutor().getResultList());
 		clear(em, factory.query(OtherRelatedEntity.class).buildExecutor().getResultList());
+		clear(em, factory.query(CountryTranslationEntity.class).buildExecutor().getResultList());
+		clear(em, factory.query(CountryEntity.class).buildExecutor().getResultList());
+		clear(em, factory.query(LangEntity.class).buildExecutor().getResultList());
 		em.flush();
 		em.clear();
 	}

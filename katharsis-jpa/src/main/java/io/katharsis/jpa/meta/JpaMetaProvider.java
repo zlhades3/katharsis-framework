@@ -15,7 +15,6 @@ import io.katharsis.jpa.meta.internal.MappedSuperclassMetaProvider;
 import io.katharsis.meta.model.MetaElement;
 import io.katharsis.meta.provider.MetaProvider;
 import io.katharsis.meta.provider.MetaProviderBase;
-import io.katharsis.meta.provider.MetaProviderContext;
 
 public class JpaMetaProvider extends MetaProviderBase {
 
@@ -46,7 +45,7 @@ public class JpaMetaProvider extends MetaProviderBase {
 	}
 
 	@Override
-	public void discoverElements(MetaProviderContext context) {
+	public void discoverElements() {
 		if (entityManagerFactory != null) {
 			Set<EmbeddableType<?>> embeddables = entityManagerFactory.getMetamodel().getEmbeddables();
 			for (EmbeddableType<?> embeddable : embeddables) {

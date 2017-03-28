@@ -297,5 +297,10 @@ public class SimpleModuleTest {
 		public TypeParser getTypeParser() {
 			return null;
 		}
+
+		@Override
+		public ResourceInformationBuilder getResourceInformationBuilder() {
+			return null;
+		}
 	}
 }

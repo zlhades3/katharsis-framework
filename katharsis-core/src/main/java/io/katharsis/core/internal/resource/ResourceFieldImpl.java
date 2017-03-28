@@ -43,7 +43,7 @@ public class ResourceFieldImpl implements ResourceField {
 	public ResourceFieldImpl(String jsonName, String underlyingName, ResourceFieldType resourceFieldType, Class<?> type, Type genericType, String oppositeResourceType) {
 		this(jsonName, underlyingName, resourceFieldType, type, genericType, 
 				oppositeResourceType, null, true, false, LookupIncludeBehavior.NONE,
-				new ResourceFieldAccess(true, true));
+				new ResourceFieldAccess(true, true, true, true));
 	}
 
 	public ResourceFieldImpl(String jsonName, String underlyingName, ResourceFieldType resourceFieldType, Class<?> type, Type genericType, String oppositeResourceType, String oppositeName, boolean lazy,
@@ -163,13 +163,15 @@ public class ResourceFieldImpl implements ResourceField {
 		return accessor;
 	}
 	
-	public void setAccessor(ReflectionFieldAccessor accessor) {
+	public void setAccessor(ResourceFieldAccessor accessor) {
 		// TODO to be eliminated by a builder pattern soon
 		this.accessor = accessor;
 	}
 	
 	public void setResourceInformation(ResourceInformation resourceInformation) {
-		this.accessor = new ReflectionFieldAccessor(resourceInformation.getResourceClass(), underlyingName, type);
+		if(this.accessor == null){
+			this.accessor = new ReflectionFieldAccessor(resourceInformation.getResourceClass(), underlyingName, type);
+		}
 		this.parentResourceInformation = resourceInformation;
 	}
 

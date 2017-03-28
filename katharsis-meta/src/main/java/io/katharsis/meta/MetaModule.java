@@ -28,7 +28,6 @@ import io.katharsis.resource.information.ResourceField;
 import io.katharsis.resource.information.ResourceFieldNameTransformer;
 import io.katharsis.resource.information.ResourceInformation;
 import io.katharsis.resource.registry.ResourceLookup;
-import io.katharsis.resource.registry.ResourceRegistryAware;
 
 public class MetaModule implements Module, InitializingModule {
 
@@ -57,6 +56,8 @@ public class MetaModule implements Module, InitializingModule {
 	@Override
 	public void setupModule(ModuleContext context) {
 		this.context = context;
+		
+		lookup.setModuleContext(context);
 
 		final Set<Class<? extends MetaElement>> metaClasses = new HashSet<>();
 		metaClasses.add(MetaElement.class);
@@ -114,11 +115,6 @@ public class MetaModule implements Module, InitializingModule {
 
 	@Override
 	public void init() {
-		for (MetaProvider provider : lookup.getProviders()) {
-			if (provider instanceof ResourceRegistryAware) {
-				((ResourceRegistryAware) provider).setResourceRegistry(context.getResourceRegistry());
-			}
-		}
 		lookup.initialize();
 	}
 

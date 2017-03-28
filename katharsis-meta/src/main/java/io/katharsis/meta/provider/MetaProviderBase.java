@@ -10,13 +10,15 @@ import io.katharsis.meta.model.MetaElement;
 
 public class MetaProviderBase implements MetaProvider {
 
+	protected MetaProviderContext context;
+
 	@Override
 	public boolean accept(Type type, Class<? extends MetaElement> metaClass) {
 		return false;
 	}
 
 	@Override
-	public MetaElement createElement(Type type, MetaProviderContext context) {
+	public MetaElement createElement(Type type) {
 		// does not accept anything, so does not need to create anything
 		throw new UnsupportedOperationException();
 	}
@@ -27,17 +29,17 @@ public class MetaProviderBase implements MetaProvider {
 	}
 
 	@Override
-	public void discoverElements(MetaProviderContext context) {
+	public void discoverElements() {
 		// nothing to do
 	}
 
 	@Override
-	public void onInitializing(MetaProviderContext context, MetaElement element) {
+	public void onInitializing(MetaElement element) {
 		// nothing to do
 	}
 
 	@Override
-	public void onInitialized(MetaProviderContext context, MetaElement element) {
+	public void onInitialized(MetaElement element) {
 		// nothing to do
 	}
 
@@ -49,5 +51,10 @@ public class MetaProviderBase implements MetaProvider {
 	@Override
 	public Map<? extends String, ? extends String> getIdMappings() {
 		return Collections.emptyMap();
+	}
+
+	@Override
+	public void init(MetaProviderContext context) {
+		this.context = context;
 	}
 }

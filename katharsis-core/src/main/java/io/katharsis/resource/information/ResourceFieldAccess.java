@@ -7,10 +7,14 @@ public class ResourceFieldAccess {
 
 	private boolean postable;
 	private boolean patchable;
+	private boolean sortable;
+	private boolean filterable;
 
-	public ResourceFieldAccess(boolean postable, boolean patchable) {
+	public ResourceFieldAccess(boolean postable, boolean patchable, boolean sortable, boolean filterable) {
 		this.postable = postable;
 		this.patchable = patchable;
+		this.sortable = sortable;
+		this.filterable = filterable;
 	}
 
 	/**
@@ -18,10 +22,6 @@ public class ResourceFieldAccess {
 	 */
 	public boolean isPostable() {
 		return postable;
-	}
-
-	public void setPostable(boolean postable) {
-		this.postable = postable;
 	}
 	
 	/**
@@ -31,8 +31,18 @@ public class ResourceFieldAccess {
 		return patchable;
 	}
 
-	public void setPatchable(boolean patchable) {
-		this.patchable = patchable;
+	/**
+	 * @return true if the field can be sorted by a GET request.
+	 */
+	public boolean isSortable() {
+		return sortable;
+	}
+
+	/**
+	 * @return true if the field can be filtered by a GET request.
+	 */
+	public boolean isFilterable() {
+		return filterable;
 	}
 
 	@Override
@@ -41,6 +51,8 @@ public class ResourceFieldAccess {
 		int result = 1;
 		result = prime * result + (patchable ? 1231 : 1237);
 		result = prime * result + (postable ? 1231 : 1237);
+		result = prime * result + (sortable ? 1231 : 1237);
+		result = prime * result + (filterable ? 1231 : 1237);
 		return result;
 	}
 
@@ -51,7 +63,7 @@ public class ResourceFieldAccess {
 		if (getClass() != obj.getClass())
 			return false;
 		ResourceFieldAccess other = (ResourceFieldAccess) obj;
-		return patchable == other.patchable && postable != other.postable;
+		return patchable == other.patchable && postable != other.postable && sortable != other.sortable && filterable != other.filterable;
 	}
 
 }

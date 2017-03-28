@@ -9,12 +9,11 @@ import io.katharsis.core.internal.utils.PropertyUtils;
 import io.katharsis.meta.model.MetaAttribute;
 import io.katharsis.meta.model.MetaDataObject;
 import io.katharsis.meta.model.MetaElement;
-import io.katharsis.meta.provider.MetaProviderContext;
 
 public abstract class MetaDataObjectProvider extends MetaDataObjectProviderBase<MetaDataObject> {
 
 	@Override
-	public MetaElement createElement(Type type, MetaProviderContext context) {
+	public MetaElement createElement(Type type) {
 		Class<?> rawClazz = ClassUtils.getRawType(type);
 		Class<?> superClazz = rawClazz.getSuperclass();
 		MetaElement superMeta = null;
@@ -36,7 +35,7 @@ public abstract class MetaDataObjectProvider extends MetaDataObjectProviderBase<
 	protected abstract MetaDataObject newDataObject();
 
 	@Override
-	public void onInitialized(MetaProviderContext context, MetaElement element) {
+	public void onInitialized(MetaElement element) {
 		if (element instanceof MetaAttribute && element.getParent().getClass() == getMetaClass()) {
 			MetaAttribute attr = (MetaAttribute) element;
 			MetaDataObject parent = attr.getParent();

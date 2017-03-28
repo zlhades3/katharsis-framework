@@ -10,9 +10,9 @@ import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.EmbeddedId;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.Lob;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
@@ -20,18 +20,18 @@ import javax.persistence.OneToOne;
 import javax.persistence.Version;
 
 import io.katharsis.core.internal.utils.ClassUtils;
+import io.katharsis.jpa.internal.JpaResourceInformationBuilder;
 import io.katharsis.jpa.meta.MetaEntityAttribute;
 import io.katharsis.jpa.meta.MetaJpaDataObject;
 import io.katharsis.meta.model.MetaAttribute;
 import io.katharsis.meta.model.MetaDataObject;
 import io.katharsis.meta.model.MetaElement;
 import io.katharsis.meta.model.MetaPrimaryKey;
-import io.katharsis.meta.provider.MetaProviderContext;
 
 public abstract class AbstractEntityMetaProvider<T extends MetaJpaDataObject> extends AbstractJpaDataObjectProvider<T> {
 
 	@Override
-	public MetaElement createElement(Type type, MetaProviderContext context) {
+	public MetaElement createElement(Type type) {
 		Class<?> rawClazz = ClassUtils.getRawType(type);
 		Class<?> superClazz = rawClazz.getSuperclass();
 		MetaElement superMeta = null;
@@ -89,48 +89,37 @@ public abstract class AbstractEntityMetaProvider<T extends MetaJpaDataObject> ex
 		MetaEntityAttribute attr = new MetaEntityAttribute();
 		attr.setName(desc.getName());
 		attr.setParent(metaDataObject, true);
-		if (hasJpaAnnotations(attr)) {
-			ManyToMany manyManyAnnotation = attr.getAnnotation(ManyToMany.class);
-			ManyToOne manyOneAnnotation = attr.getAnnotation(ManyToOne.class);
-			OneToMany oneManyAnnotation = attr.getAnnotation(OneToMany.class);
-			OneToOne oneOneAnnotation = attr.getAnnotation(OneToOne.class);
-			Version versionAnnotation = attr.getAnnotation(Version.class);
-			ElementCollection elemCollectionAnnotation = attr.getAnnotation(ElementCollection.class);
 
-			attr.setVersion(versionAnnotation != null);
+		ManyToMany manyManyAnnotation = attr.getAnnotation(ManyToMany.class);
+		ManyToOne manyOneAnnotation = attr.getAnnotation(ManyToOne.class);
+		OneToMany oneManyAnnotation = attr.getAnnotation(OneToMany.class);
+		OneToOne oneOneAnnotation = attr.getAnnotation(OneToOne.class);
+		Version versionAnnotation = attr.getAnnotation(Version.class);
+		Lob lobAnnotation = attr.getAnnotation(Lob.class);
+		Column columnAnnotation = attr.getAnnotation(Column.class);
+		
+		boolean idAttr = attr.getAnnotation(Id.class) != null || attr.getAnnotation(EmbeddedId.class) != null;
+		boolean attrGenerated = attr.getAnnotation(GeneratedValue.class) != null;
+		
+		attr.setVersion(versionAnnotation != null);
+		attr.setAssociation(manyManyAnnotation != null || manyOneAnnotation != null || oneManyAnnotation != null
+				|| oneOneAnnotation != null);
 
-			FetchType fetchType = null;
-			if (manyManyAnnotation != null) {
-				fetchType = manyManyAnnotation.fetch();
-			}
-			if (oneManyAnnotation != null) {
-				fetchType = oneManyAnnotation.fetch();
-			}
-			if (oneOneAnnotation != null) {
-				fetchType = oneOneAnnotation.fetch();
-			}
-
-			attr.setAssociation(manyManyAnnotation != null || manyOneAnnotation != null || oneManyAnnotation != null
-					|| oneOneAnnotation != null);
-
-			boolean lazyCollection = elemCollectionAnnotation != null
-					&& elemCollectionAnnotation.fetch() != FetchType.EAGER;
-			boolean lazyAssociation = attr.isAssociation() && (fetchType == null || fetchType == FetchType.LAZY);
-
-			attr.setLazy(lazyCollection || lazyAssociation);
-		} else {
-			attr.setDerived(true);
-		}
-
-		attr.setSortable(true);
-		attr.setFilterable(true);
+		attr.setLazy(JpaResourceInformationBuilder.isJpaLazy(attr.getAnnotations()));
+		attr.setLob(lobAnnotation != null);
+		attr.setFilterable(lobAnnotation == null);
+		attr.setSortable(lobAnnotation == null);
+		
+		boolean hasSetter = attr.getWriteMethod() != null;
+		attr.setInsertable(hasSetter && (columnAnnotation == null || columnAnnotation.insertable()) && !attrGenerated && versionAnnotation == null);
+		attr.setUpdatable(hasSetter && (columnAnnotation == null || columnAnnotation.updatable()) && !idAttr && versionAnnotation == null);
 
 		return attr;
 	}
 
 	@Override
-	public void onInitialized(MetaProviderContext context, MetaElement element) {
-		super.onInitialized(context, element);
+	public void onInitialized(MetaElement element) {
+		super.onInitialized(element);
 		if (element.getParent() instanceof MetaJpaDataObject && element instanceof MetaAttribute
 				&& ((MetaAttribute) element).getOppositeAttribute() == null) {
 			MetaAttribute attr = (MetaAttribute) element;
@@ -138,11 +127,12 @@ public abstract class AbstractEntityMetaProvider<T extends MetaJpaDataObject> ex
 			if (mappedBy != null) {
 
 				MetaDataObject oppositeType = attr.getType().getElementType().asDataObject();
-				MetaAttribute oppositeAttr = oppositeType.getAttribute(mappedBy);
-				if (oppositeAttr == null) {
-					throw new IllegalStateException(mappedBy + " opposite attribute not found for " + attr);
+				if(!mappedBy.contains(".")){
+					MetaAttribute oppositeAttr = oppositeType.getAttribute(mappedBy);
+					attr.setOppositeAttribute(oppositeAttr);
+				}else{
+					// references within embeddables not yet supported
 				}
-				attr.setOppositeAttribute(oppositeAttr);
 			}
 		}
 	}

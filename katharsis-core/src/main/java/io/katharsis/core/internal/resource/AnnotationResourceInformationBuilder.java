@@ -67,9 +67,13 @@ public class AnnotationResourceInformationBuilder implements ResourceInformation
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public ResourceInformation build(Class<?> resourceClass) {
+		return build(resourceClass, false);
+	}
+	
+	public ResourceInformation build(Class<?> resourceClass, boolean allowNonResourceBaseClass) {
 		List<AnnotatedResourceField> resourceFields = getResourceFields(resourceClass);
 
-		String resourceType = getResourceType(resourceClass);
+		String resourceType = getResourceType(resourceClass, allowNonResourceBaseClass);
 
 		Optional<JsonPropertyOrder> propertyOrder = ClassUtils.getAnnotation(resourceClass, JsonPropertyOrder.class);
 		if (propertyOrder.isPresent()) {
@@ -82,17 +86,28 @@ public class AnnotationResourceInformationBuilder implements ResourceInformation
 		Class<?> superclass = resourceClass.getSuperclass();
 		String superResourceType = superclass != Object.class && context.accept(superclass) ? context.getResourceType(superclass) : null;
 
-		return new ResourceInformation(context.getTypeParser(), resourceClass, resourceType, superResourceType, instanceBuilder, (List) resourceFields);
+		ResourceInformation information = new ResourceInformation(context.getTypeParser(), resourceClass, resourceType, superResourceType, instanceBuilder, (List) resourceFields);
+		if (!allowNonResourceBaseClass & information.getIdField() == null) {
+			throw new ResourceIdNotFoundException(resourceClass.getCanonicalName());
+		}
+		return information;
 	}
 
 	@Override
 	public String getResourceType(Class<?> resourceClass) {
+		return getResourceType(resourceClass, false);
+	}
+	
+	private String getResourceType(Class<?> resourceClass, boolean allowNonResourceBaseClass) {
 		Annotation[] annotations = resourceClass.getAnnotations();
 		for (Annotation annotation : annotations) {
 			if (annotation instanceof JsonApiResource) {
 				JsonApiResource apiResource = (JsonApiResource) annotation;
 				return apiResource.type();
 			}
+		}
+		if(allowNonResourceBaseClass){
+			return null;
 		}
 		// won't reach this
 		throw new RepositoryAnnotationNotFoundException(resourceClass.getName());
@@ -203,7 +218,9 @@ public class AnnotationResourceInformationBuilder implements ResourceInformation
 		String oppositeResourceType = getResourceType(fieldGenericType, context);
 		boolean postable = fromField.getAccess().isPostable() && fromMethod.getAccess().isPostable();
 		boolean patchable = fromField.getAccess().isPatchable() && fromMethod.getAccess().isPatchable();
-		ResourceFieldAccess mergedAccess = new ResourceFieldAccess(postable, patchable);
+		boolean sortable = fromField.getAccess().isSortable() && fromMethod.getAccess().isSortable();
+		boolean filterable = fromField.getAccess().isFilterable() && fromMethod.getAccess().isFilterable();
+		ResourceFieldAccess mergedAccess = new ResourceFieldAccess(postable, patchable, sortable, filterable);
 		return new AnnotatedResourceField(fromField.getJsonName(), fromField.getUnderlyingName(), fieldType, fieldGenericType, oppositeResourceType, annotations, mergedAccess);
 	}
 
@@ -426,12 +443,16 @@ public class AnnotationResourceInformationBuilder implements ResourceInformation
 	public static ResourceFieldAccess getResourceFieldAccess(ResourceFieldType resourceFieldType, boolean hasSetter, Collection<Annotation> annotations) {
 		boolean postable = hasSetter;
 		boolean patchable = hasSetter && resourceFieldType != ResourceFieldType.ID;
+		boolean sortable = true;
+		boolean filterable = true;
 
 		JsonApiField fieldAnnotation = AnnotatedResourceField.getFieldAnnotation(annotations);
 		JsonProperty jsonProperty = AnnotatedResourceField.getJsonPropertyAnnotation(annotations);
 		if (fieldAnnotation != null) {
 			postable = fieldAnnotation.postable();
 			patchable = fieldAnnotation.patchable();
+			sortable = fieldAnnotation.sortable();
+			filterable = fieldAnnotation.filterable();
 		} else if (jsonProperty != null) {
 			JsonProperty.Access access = jsonProperty.access();
 			switch (access) {
@@ -453,7 +474,7 @@ public class AnnotationResourceInformationBuilder implements ResourceInformation
 				throw new IllegalStateException("unknown access policy " + access);
 			}
 		}
-		return new ResourceFieldAccess(postable, patchable);
+		return new ResourceFieldAccess(postable, patchable, sortable, filterable);
 	}
 	
 	public static boolean hasSetter(Class<?> resourceClass, String underlyingName) {

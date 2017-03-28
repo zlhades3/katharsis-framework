@@ -175,6 +175,11 @@ public interface Module {
 		public boolean isServer();
 
 		public TypeParser getTypeParser();
+		
+		/**
+		 * @return combined resource information build registered by all modules
+		 */
+		public ResourceInformationBuilder getResourceInformationBuilder();
 
 	}
 }
