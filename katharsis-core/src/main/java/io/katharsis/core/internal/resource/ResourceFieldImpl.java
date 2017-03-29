@@ -177,7 +177,7 @@ public class ResourceFieldImpl implements ResourceField {
 
 	@Override
 	public String toString() {
-		return getClass().getSimpleName() + "[jsonName=" + jsonName + ",resourceType=" + parentResourceInformation.getResourceType() + "]";
+		return getClass().getSimpleName() + "[jsonName=" + jsonName + ",resourceType=" + (parentResourceInformation != null ? parentResourceInformation.getResourceType() : null) + "]";
 	}
 
 	public boolean isCollection() {
