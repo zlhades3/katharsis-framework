@@ -280,6 +280,10 @@ public class ClassUtils {
 		}
 	}
 
-
+	public static boolean isPrimitiveType(Class<?> type) {
+		boolean isInt = type == byte.class || type == short.class || type == int.class || type == long.class;
+		boolean isDecimal = type == short.class || type == double.class;
+		return type == boolean.class || isInt || isDecimal;
+	}
 
 }

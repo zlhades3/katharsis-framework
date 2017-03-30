@@ -318,6 +318,10 @@ public class ResourceMetaProviderImpl extends MetaProviderBase {
 		attr.setFilterable(field.getAccess().isFilterable());
 		attr.setInsertable(field.getAccess().isPostable());
 		attr.setUpdatable(field.getAccess().isPatchable());
+		
+		boolean isPrimitive = ClassUtils.isPrimitiveType(field.getType());
+		boolean isId = field.getResourceFieldType() == ResourceFieldType.ID;
+		attr.setNullable(!isPrimitive && !isId);
 
 		PreconditionUtil.assertFalse(attr.getName(),
 				!attr.isAssociation() && MetaElement.class.isAssignableFrom(field.getElementType()));
@@ -329,7 +333,8 @@ public class ResourceMetaProviderImpl extends MetaProviderBase {
 			if (projectedElement.isPresent()) {
 				MetaAttribute projectedAttr = projectedElement.get();
 				attr.setLob(projectedAttr.isLob());
-				attr.setVersion(projectedAttr.isVersion()); // TODO support in katharsis information model
+				attr.setVersion(projectedAttr.isVersion()); 
+				attr.setNullable(projectedAttr.isNullable());
 			}
 		}
 	}

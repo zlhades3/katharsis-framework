@@ -80,6 +80,12 @@ public abstract class AbstractEntityMetaProvider<T extends MetaJpaDataObject> ex
 				primaryKey.setParent(meta, true);
 				primaryKey.setGenerated(generated);
 				meta.setPrimaryKey(primaryKey);
+				
+				if(pkElements.size() == 1){
+					// single pk element cannot be nullable
+					MetaAttribute pkElement = pkElements.get(0);
+					pkElement.setNullable(false);
+				}
 			}
 		}
 	}
@@ -111,6 +117,11 @@ public abstract class AbstractEntityMetaProvider<T extends MetaJpaDataObject> ex
 		attr.setLob(lobAnnotation != null);
 		attr.setFilterable(lobAnnotation == null);
 		attr.setSortable(lobAnnotation == null);
+		
+		Class<?> attributeType = desc.getPropertyType();
+		boolean isPrimitiveType = ClassUtils.isPrimitiveType(attributeType);
+		boolean columnNullable = columnAnnotation == null || columnAnnotation.nullable();
+		attr.setNullable(!isPrimitiveType && columnNullable);
 		
 		boolean hasSetter = attr.getWriteMethod() != null;
 		attr.setInsertable(hasSetter && (columnAnnotation == null || columnAnnotation.insertable()) && !attrGenerated && versionAnnotation == null);

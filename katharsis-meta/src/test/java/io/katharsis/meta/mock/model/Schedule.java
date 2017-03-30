@@ -24,6 +24,16 @@ public class Schedule {
 	@JsonApiToMany(opposite = "schedule")
 	private List<Task> tasks;
 
+	private boolean delayed;
+
+	public boolean isDelayed() {
+		return delayed;
+	}
+
+	public void setDelayed(boolean delayed) {
+		this.delayed = delayed;
+	}
+
 	public Long getId() {
 		return id;
 	}

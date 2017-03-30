@@ -64,6 +64,28 @@ public class ResourceMetaProviderTest extends AbstractMetaTest {
 	}
 
 	@Test
+	public void testPrimaryKeyNotNullable() {
+		MetaResource meta = lookup.getMeta(Schedule.class, MetaResource.class);
+		MetaKey primaryKey = meta.getPrimaryKey();
+		MetaAttribute idField = primaryKey.getElements().get(0);
+		Assert.assertFalse(idField.isNullable());
+	}
+
+	@Test
+	public void testRegularFieldNullable() {
+		MetaResource meta = lookup.getMeta(Schedule.class, MetaResource.class);
+		MetaAttribute taskField = meta.getAttribute("task");
+		Assert.assertTrue(taskField.isNullable());
+	}
+
+	@Test
+	public void testPrimitiveFieldNotNullable() {
+		MetaResource meta = lookup.getMeta(Schedule.class, MetaResource.class);
+		MetaAttribute taskField = meta.getAttribute("delayed");
+		Assert.assertFalse(taskField.isNullable());
+	}
+
+	@Test
 	public void testInheritance() {
 		MetaResource meta = lookup.getMeta(ExtendsBaseResource.class, MetaResource.class);
 

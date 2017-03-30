@@ -21,6 +21,7 @@ public class JpaMetaProvider extends MetaProviderBase {
 	private EntityManagerFactory entityManagerFactory;
 
 	public JpaMetaProvider() {
+		// nothing to do here
 	}
 
 	public JpaMetaProvider(EntityManagerFactory entityManagerFactory) {

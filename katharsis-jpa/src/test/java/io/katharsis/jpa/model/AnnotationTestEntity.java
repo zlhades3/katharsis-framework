@@ -23,17 +23,23 @@ public class AnnotationTestEntity {
 
 	@Column(insertable = false, updatable = true)
 	private String columnAnnotatedValue;
-	
+
+	@Column(nullable = false)
+	private String notNullableValue;
+
+	@Column(nullable = true)
+	private String nullableValue;
+
 	private String readOnlyValue = "someReadOnlyValue";
 
 	public Long getId() {
 		return id;
 	}
 
-	public String getReadOnlyValue(){
+	public String getReadOnlyValue() {
 		return readOnlyValue;
 	}
-	
+
 	public void setId(Long id) {
 		this.id = id;
 	}
@@ -60,5 +66,21 @@ public class AnnotationTestEntity {
 
 	public void setColumnAnnotatedValue(String columnAnnotatedValue) {
 		this.columnAnnotatedValue = columnAnnotatedValue;
+	}
+
+	public String getNotNullableValue() {
+		return notNullableValue;
+	}
+
+	public void setNotNullableValue(String notNullableValue) {
+		this.notNullableValue = notNullableValue;
+	}
+
+	public String getNullableValue() {
+		return nullableValue;
+	}
+
+	public void setNullableValue(String nullableValue) {
+		this.nullableValue = nullableValue;
 	}
 }

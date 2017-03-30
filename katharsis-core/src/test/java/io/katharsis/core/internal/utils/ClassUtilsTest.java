@@ -12,7 +12,6 @@ import org.junit.Test;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-import io.katharsis.core.internal.utils.ClassUtils;
 import io.katharsis.errorhandling.exception.ResourceException;
 import io.katharsis.legacy.repository.ResourceRepository;
 import io.katharsis.resource.annotations.JsonApiResource;
@@ -225,6 +224,20 @@ public class ClassUtilsTest {
 	public void onFindGetterShouldNotReturnNonBooleanIsMethods() throws Exception {
 		Method method = ClassUtils.findGetter(InvalidBooleanClass.class, "notABooleanReturnType");
 		assertThat(method).isNull();
+	}
+	
+	@Test
+	public void testIsPrimitiveType(){
+		assertThat(ClassUtils.isPrimitiveType(boolean.class)).isTrue();
+		assertThat(ClassUtils.isPrimitiveType(byte.class)).isTrue();
+		assertThat(ClassUtils.isPrimitiveType(short.class)).isTrue();
+		assertThat(ClassUtils.isPrimitiveType(int.class)).isTrue();
+		assertThat(ClassUtils.isPrimitiveType(long.class)).isTrue();
+		assertThat(ClassUtils.isPrimitiveType(short.class)).isTrue();
+		assertThat(ClassUtils.isPrimitiveType(double.class)).isTrue();
+		assertThat(ClassUtils.isPrimitiveType(String.class)).isFalse();
+		assertThat(ClassUtils.isPrimitiveType(Object.class)).isFalse();
+		assertThat(ClassUtils.isPrimitiveType(int[].class)).isFalse();
 	}
 
 	private abstract class BaseGenericClass<T> {

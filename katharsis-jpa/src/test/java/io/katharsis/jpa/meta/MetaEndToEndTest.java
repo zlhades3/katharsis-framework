@@ -55,6 +55,24 @@ public class MetaEndToEndTest extends AbstractJpaJerseyTest {
 		Assert.assertTrue(lobAttr.isLob());
 	}
 
+	
+	@Test
+	public void testProjectedColumnAnnotatedValueIsNotNullable() {
+		MetaLookup lookup = metaModule.getLookup();
+		MetaResourceBase meta = lookup.getMeta(AnnotationTestEntity.class, MetaResourceBase.class);
+		MetaAttribute field = meta.getAttribute("notNullableValue");
+		Assert.assertFalse(field.isNullable());
+	}
+
+	
+	@Test
+	public void testProjectedColumnAnnotatedValueIsNullable() {
+		MetaLookup lookup = metaModule.getLookup();
+		MetaResourceBase meta = lookup.getMeta(AnnotationTestEntity.class, MetaResourceBase.class);
+		MetaAttribute field = meta.getAttribute("nullableValue");
+		Assert.assertTrue(field.isNullable());
+	}
+	
 	@Test
 	public void testProjectedVersion() {
 		MetaLookup lookup = metaModule.getLookup();

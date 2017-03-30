@@ -60,6 +60,14 @@
 			<version>${project.version}</version>
 		</dependency>
 
+		<dependency>
+			<groupId>io.katharsis</groupId>
+			<artifactId>katharsis-meta</artifactId>
+			<version>${project.version}</version>
+			<scope>compile</scope>
+			<optional>true</optional>
+		</dependency>
+
 		<!-- consider migrating and enhancing Katharsis PropertyUtils -->
 		<dependency>
 			<groupId>commons-beanutils</groupId>
@@ -91,6 +99,7 @@
 		<dependency>
 			<groupId>org.reflections</groupId>
 			<artifactId>reflections</artifactId>
+			<scope>test</scope>
 		</dependency>
 
 

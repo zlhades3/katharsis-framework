@@ -54,6 +54,8 @@ public class MetaAttribute extends MetaElement {
 	private boolean updatable;
 	
 	private boolean lob;
+	
+	private boolean nullable;
 
 	@JsonApiRelation(serialize = SerializeType.LAZY)
 	private MetaAttribute oppositeAttribute;
@@ -74,6 +76,14 @@ public class MetaAttribute extends MetaElement {
 		}
 	}
 	
+	public boolean isNullable() {
+		return nullable;
+	}
+
+	public void setNullable(boolean nullable) {
+		this.nullable = nullable;
+	}
+
 	public Method getWriteMethod(){
 		this.initAccessors();
 		return writeMethod;
