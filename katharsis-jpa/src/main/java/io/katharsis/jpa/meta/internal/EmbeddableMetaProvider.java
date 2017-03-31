@@ -11,6 +11,7 @@ import io.katharsis.core.internal.utils.ClassUtils;
 import io.katharsis.jpa.meta.MetaEmbeddable;
 import io.katharsis.jpa.meta.MetaEmbeddableAttribute;
 import io.katharsis.jpa.meta.MetaJpaDataObject;
+import io.katharsis.meta.internal.MetaUtils;
 import io.katharsis.meta.model.MetaAttribute;
 import io.katharsis.meta.model.MetaDataObject;
 import io.katharsis.meta.model.MetaElement;
@@ -27,8 +28,7 @@ public class EmbeddableMetaProvider extends AbstractJpaDataObjectProvider<MetaEm
 	@Override
 	public boolean accept(Type type, Class<? extends MetaElement> metaClass) {
 		boolean hasAnnotation = ClassUtils.getRawType(type).getAnnotation(Embeddable.class) != null;
-		boolean hasType = metaClass == MetaElement.class || metaClass == MetaEmbeddable.class
-				|| metaClass == MetaJpaDataObject.class;
+		boolean hasType = metaClass == MetaElement.class || metaClass == MetaEmbeddable.class || metaClass == MetaJpaDataObject.class;
 		return hasAnnotation && hasType;
 	}
 
@@ -56,7 +56,7 @@ public class EmbeddableMetaProvider extends AbstractJpaDataObjectProvider<MetaEm
 	protected MetaAttribute createAttribute(MetaEmbeddable metaDataObject, PropertyDescriptor desc) {
 		MetaEmbeddableAttribute attr = new MetaEmbeddableAttribute();
 		attr.setParent(metaDataObject, true);
-		attr.setName(desc.getName());
+		attr.setName(MetaUtils.firstToLower(desc.getName()));
 		attr.setFilterable(true);
 		attr.setSortable(true);
 		return attr;

@@ -25,6 +25,7 @@ import io.katharsis.core.internal.utils.ClassUtils;
 import io.katharsis.jpa.internal.JpaResourceInformationBuilder;
 import io.katharsis.jpa.meta.MetaEntityAttribute;
 import io.katharsis.jpa.meta.MetaJpaDataObject;
+import io.katharsis.meta.internal.MetaUtils;
 import io.katharsis.meta.model.MetaAttribute;
 import io.katharsis.meta.model.MetaDataObject;
 import io.katharsis.meta.model.MetaElement;
@@ -67,8 +68,7 @@ public abstract class AbstractEntityMetaProvider<T extends MetaJpaDataObject> ex
 					if (pkElements.size() == 1) {
 						generated = attrGenerated;
 					} else if (generated != attrGenerated) {
-						throw new IllegalStateException(
-								"cannot mix generated and not-generated primary key elements for " + meta.getId());
+						throw new IllegalStateException("cannot mix generated and not-generated primary key elements for " + meta.getId());
 					}
 				}
 			}
@@ -80,8 +80,8 @@ public abstract class AbstractEntityMetaProvider<T extends MetaJpaDataObject> ex
 				primaryKey.setParent(meta, true);
 				primaryKey.setGenerated(generated);
 				meta.setPrimaryKey(primaryKey);
-				
-				if(pkElements.size() == 1){
+
+				if (pkElements.size() == 1) {
 					// single pk element cannot be nullable
 					MetaAttribute pkElement = pkElements.get(0);
 					pkElement.setNullable(false);
@@ -95,7 +95,7 @@ public abstract class AbstractEntityMetaProvider<T extends MetaJpaDataObject> ex
 	@Override
 	protected MetaAttribute createAttribute(T metaDataObject, PropertyDescriptor desc) {
 		MetaEntityAttribute attr = new MetaEntityAttribute();
-		attr.setName(desc.getName());
+		attr.setName(MetaUtils.firstToLower(desc.getName()));
 		attr.setParent(metaDataObject, true);
 
 		ManyToMany manyManyAnnotation = attr.getAnnotation(ManyToMany.class);
@@ -105,24 +105,23 @@ public abstract class AbstractEntityMetaProvider<T extends MetaJpaDataObject> ex
 		Version versionAnnotation = attr.getAnnotation(Version.class);
 		Lob lobAnnotation = attr.getAnnotation(Lob.class);
 		Column columnAnnotation = attr.getAnnotation(Column.class);
-		
+
 		boolean idAttr = attr.getAnnotation(Id.class) != null || attr.getAnnotation(EmbeddedId.class) != null;
 		boolean attrGenerated = attr.getAnnotation(GeneratedValue.class) != null;
-		
+
 		attr.setVersion(versionAnnotation != null);
-		attr.setAssociation(manyManyAnnotation != null || manyOneAnnotation != null || oneManyAnnotation != null
-				|| oneOneAnnotation != null);
+		attr.setAssociation(manyManyAnnotation != null || manyOneAnnotation != null || oneManyAnnotation != null || oneOneAnnotation != null);
 
 		attr.setLazy(JpaResourceInformationBuilder.isJpaLazy(attr.getAnnotations()));
 		attr.setLob(lobAnnotation != null);
 		attr.setFilterable(lobAnnotation == null);
 		attr.setSortable(lobAnnotation == null);
-		
+
 		Class<?> attributeType = desc.getPropertyType();
 		boolean isPrimitiveType = ClassUtils.isPrimitiveType(attributeType);
 		boolean columnNullable = columnAnnotation == null || columnAnnotation.nullable();
 		attr.setNullable(!isPrimitiveType && columnNullable);
-		
+
 		boolean hasSetter = attr.getWriteMethod() != null;
 		attr.setInsertable(hasSetter && (columnAnnotation == null || columnAnnotation.insertable()) && !attrGenerated && versionAnnotation == null);
 		attr.setUpdatable(hasSetter && (columnAnnotation == null || columnAnnotation.updatable()) && !idAttr && versionAnnotation == null);
@@ -133,17 +132,16 @@ public abstract class AbstractEntityMetaProvider<T extends MetaJpaDataObject> ex
 	@Override
 	public void onInitialized(MetaElement element) {
 		super.onInitialized(element);
-		if (element.getParent() instanceof MetaJpaDataObject && element instanceof MetaAttribute
-				&& ((MetaAttribute) element).getOppositeAttribute() == null) {
+		if (element.getParent() instanceof MetaJpaDataObject && element instanceof MetaAttribute && ((MetaAttribute) element).getOppositeAttribute() == null) {
 			MetaAttribute attr = (MetaAttribute) element;
 			String mappedBy = getMappedBy(attr);
 			if (mappedBy != null) {
 
 				MetaDataObject oppositeType = attr.getType().getElementType().asDataObject();
-				if(!mappedBy.contains(".")){
+				if (!mappedBy.contains(".")) {
 					MetaAttribute oppositeAttr = oppositeType.getAttribute(mappedBy);
 					attr.setOppositeAttribute(oppositeAttr);
-				}else{
+				} else {
 					// references within embeddables not yet supported
 				}
 			}
@@ -172,8 +170,7 @@ public abstract class AbstractEntityMetaProvider<T extends MetaJpaDataObject> ex
 	}
 
 	private boolean hasJpaAnnotations(MetaAttribute attribute) {
-		List<Class<? extends Annotation>> annotationClasses = Arrays.asList(Id.class, EmbeddedId.class, Column.class,
-				ManyToMany.class, ManyToOne.class, OneToMany.class, OneToOne.class, Version.class,
+		List<Class<? extends Annotation>> annotationClasses = Arrays.asList(Id.class, EmbeddedId.class, Column.class, ManyToMany.class, ManyToOne.class, OneToMany.class, OneToOne.class, Version.class,
 				ElementCollection.class);
 		for (Class<? extends Annotation> annotationClass : annotationClasses) {
 			if (attribute.getAnnotation(annotationClass) != null) {

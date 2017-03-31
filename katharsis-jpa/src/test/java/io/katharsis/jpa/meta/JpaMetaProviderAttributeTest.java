@@ -3,6 +3,7 @@ package io.katharsis.jpa.meta;
 import org.junit.Assert;
 import org.junit.Test;
 
+import io.katharsis.jpa.model.NamingTestEntity;
 import io.katharsis.jpa.model.RelatedEntity;
 import io.katharsis.jpa.model.TestEntity;
 import io.katharsis.meta.MetaLookup;
@@ -10,7 +11,7 @@ import io.katharsis.meta.model.MetaAttribute;
 import io.katharsis.meta.model.MetaCollectionType;
 import io.katharsis.meta.model.MetaMapType;
 
-public class MetaAttributeImplTest {
+public class JpaMetaProviderAttributeTest {
 
 	@Test
 	public void testPrimaryKey() {
@@ -26,6 +27,18 @@ public class MetaAttributeImplTest {
 		Assert.assertFalse(attr.isVersion());
 		Assert.assertFalse(attr.isLazy());
 		Assert.assertNull(attr.getOppositeAttribute());
+	}
+
+	@Test
+	public void testFirstCharacterOfNameIsLowerCase() {
+		MetaLookup lookup = new MetaLookup();
+		lookup.addProvider(new JpaMetaProvider());
+		lookup.initialize();
+		MetaEntity meta = lookup.getMeta(NamingTestEntity.class, MetaEntity.class);
+
+		Assert.assertTrue(meta.hasAttribute("id"));
+		Assert.assertTrue(meta.hasAttribute("sEcondUpperCaseValue"));
+		Assert.assertFalse(meta.hasAttribute("SEcondUpperCaseValue"));
 	}
 
 	@Test
