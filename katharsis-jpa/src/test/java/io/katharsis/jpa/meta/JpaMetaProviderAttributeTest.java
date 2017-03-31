@@ -6,6 +6,7 @@ import org.junit.Test;
 import io.katharsis.jpa.model.NamingTestEntity;
 import io.katharsis.jpa.model.RelatedEntity;
 import io.katharsis.jpa.model.TestEntity;
+import io.katharsis.jpa.model.WriteOnlyAttributeTestEntity;
 import io.katharsis.meta.MetaLookup;
 import io.katharsis.meta.model.MetaAttribute;
 import io.katharsis.meta.model.MetaCollectionType;
@@ -27,6 +28,19 @@ public class JpaMetaProviderAttributeTest {
 		Assert.assertFalse(attr.isVersion());
 		Assert.assertFalse(attr.isLazy());
 		Assert.assertNull(attr.getOppositeAttribute());
+	}
+
+	@Test
+	public void testWriteOnlyAttributesIngoredAsNotYetSupported() {
+		MetaLookup lookup = new MetaLookup();
+		lookup.addProvider(new JpaMetaProvider());
+		lookup.initialize();
+		MetaEntity meta = lookup.getMeta(WriteOnlyAttributeTestEntity.class, MetaEntity.class);
+
+		Assert.assertTrue(meta.hasAttribute("id"));
+
+		// not yet supported
+		Assert.assertFalse(meta.hasAttribute("writeOnlyValue"));
 	}
 
 	@Test

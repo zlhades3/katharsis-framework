@@ -1,6 +1,7 @@
 package io.katharsis.meta.internal;
 
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.Method;
 
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.beanutils.PropertyUtilsBean;
@@ -15,14 +16,17 @@ public abstract class MetaDataObjectProviderBase<T extends MetaDataObject> exten
 		Class<?> implClass = meta.getImplementationClass();
 		PropertyUtilsBean utils = BeanUtilsBean.getInstance().getPropertyUtils();
 		PropertyDescriptor[] descriptors = utils.getPropertyDescriptors(implClass);
-		for (PropertyDescriptor desc : descriptors) {
-			if (desc.getReadMethod().getDeclaringClass() != implClass)
-				continue; // contained in super type
 
+		for (PropertyDescriptor desc : descriptors) {
+			Method method = desc.getReadMethod();
+			if (method == null) {
+				continue;
+			}
+			if (method.getDeclaringClass() != implClass) {
+				continue; // contained in super type
+			}
 			createAttribute(meta, desc);
 		}
-
-		// 
 	}
 
 	protected MetaAttribute createAttribute(T metaDataObject, PropertyDescriptor desc) {
