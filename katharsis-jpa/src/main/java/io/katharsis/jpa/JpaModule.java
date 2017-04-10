@@ -1,6 +1,7 @@
 package io.katharsis.jpa;
 
 import java.io.Serializable;
+import java.lang.reflect.Constructor;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -18,9 +19,12 @@ import org.slf4j.LoggerFactory;
 
 import io.katharsis.core.internal.boot.TransactionRunner;
 import io.katharsis.core.internal.utils.PreconditionUtil;
+import io.katharsis.errorhandling.mapper.ExceptionMapper;
 import io.katharsis.jpa.internal.JpaRequestContext;
 import io.katharsis.jpa.internal.JpaResourceInformationBuilder;
 import io.katharsis.jpa.internal.OptimisticLockExceptionMapper;
+import io.katharsis.jpa.internal.PersistenceExceptionMapper;
+import io.katharsis.jpa.internal.PersistenceRollbackExceptionMapper;
 import io.katharsis.jpa.internal.query.backend.querydsl.QuerydslQueryImpl;
 import io.katharsis.jpa.mapping.JpaMapper;
 import io.katharsis.jpa.meta.JpaMetaProvider;
@@ -200,8 +204,7 @@ public class JpaModule implements Module {
 	 *            to use
 	 * @return created module
 	 */
-	public static JpaModule newServerModule(EntityManagerFactory emFactory, EntityManager em,
-			TransactionRunner transactionRunner) {
+	public static JpaModule newServerModule(EntityManagerFactory emFactory, EntityManager em, TransactionRunner transactionRunner) {
 		return new JpaModule(emFactory, em, transactionRunner);
 	}
 
@@ -288,8 +291,7 @@ public class JpaModule implements Module {
 			}
 		}
 
-		private <T> void invokeFilter(JpaRepositoryFilter filter, JpaRequestContext requestContext,
-				QuerydslTranslationContext<T> translationContext) {
+		private <T> void invokeFilter(JpaRepositoryFilter filter, JpaRequestContext requestContext, QuerydslTranslationContext<T> translationContext) {
 			if (filter instanceof QuerydslRepositoryFilter) {
 				Object repository = requestContext.getRepository();
 				QuerySpec querySpec = requestContext.getQuerySpec();
@@ -329,6 +331,10 @@ public class JpaModule implements Module {
 
 		context.addResourceInformationBuilder(getResourceInformationBuilder());
 		context.addExceptionMapper(new OptimisticLockExceptionMapper());
+		context.addExceptionMapper(new PersistenceExceptionMapper(context));
+		context.addExceptionMapper(new PersistenceRollbackExceptionMapper(context));
+
+		addTransactionRollbackExceptionMapper();
 		context.addRepositoryDecoratorFactory(new JpaRepositoryDecoratorFactory());
 
 		if (em != null) {
@@ -337,11 +343,29 @@ public class JpaModule implements Module {
 		}
 	}
 
+	private void addTransactionRollbackExceptionMapper() {
+		try {
+			Class.forName("javax.transaction.RollbackException");
+		} catch (ClassNotFoundException e) {
+			// may not be available depending on environment
+			return;
+		}
+
+		try {
+			Class<?> mapperClass = Class.forName("io.katharsis.jpa.internal.TransactionRollbackExceptionMapper");
+			Constructor<?> constructor = mapperClass.getConstructor(ModuleContext.class);
+			ExceptionMapper<?> mapper = (ExceptionMapper<?>) constructor.newInstance(context);
+			context.addExceptionMapper(mapper);
+		} catch (Exception e) {
+			throw new IllegalStateException(e);
+		}
+	
+	}
+
 	class JpaRepositoryDecoratorFactory implements RepositoryDecoratorFactory {
 
 		@Override
-		public <T, I extends Serializable> ResourceRepositoryDecorator<T, I> decorateRepository(
-				ResourceRepositoryV2<T, I> repository) {
+		public <T, I extends Serializable> ResourceRepositoryDecorator<T, I> decorateRepository(ResourceRepositoryV2<T, I> repository) {
 			JpaRepositoryConfig<T> config = getRepositoryConfig(repository.getResourceClass());
 			if (config != null) {
 				return config.getRepositoryDecorator();
@@ -350,8 +374,7 @@ public class JpaModule implements Module {
 		}
 
 		@Override
-		public <T, I extends Serializable, D, J extends Serializable> RelationshipRepositoryDecorator<T, I, D, J> decorateRepository(
-				RelationshipRepositoryV2<T, I, D, J> repository) {
+		public <T, I extends Serializable, D, J extends Serializable> RelationshipRepositoryDecorator<T, I, D, J> decorateRepository(RelationshipRepositoryV2<T, I, D, J> repository) {
 			JpaRepositoryConfig<T> config = getRepositoryConfig(repository.getSourceResourceClass());
 			if (config != null) {
 				return config.getRepositoryDecorator(repository.getTargetResourceClass());
@@ -395,8 +418,7 @@ public class JpaModule implements Module {
 		}
 	}
 
-	private ResourceRepositoryV2<?, ?> filterResourceCreation(Class<?> resourceClass,
-			JpaEntityRepository<?, ?> repository) {
+	private ResourceRepositoryV2<?, ?> filterResourceCreation(Class<?> resourceClass, JpaEntityRepository<?, ?> repository) {
 		JpaEntityRepository<?, ?> filteredRepository = repository;
 		for (JpaRepositoryFilter filter : filters) {
 			if (filter.accept(resourceClass)) {
@@ -406,8 +428,7 @@ public class JpaModule implements Module {
 		return filteredRepository;
 	}
 
-	private RelationshipRepositoryV2<?, ?, ?, ?> filterRelationshipCreation(Class<?> resourceClass,
-			JpaRelationshipRepository<?, ?, ?, ?> repository) {
+	private RelationshipRepositoryV2<?, ?, ?, ?> filterRelationshipCreation(Class<?> resourceClass, JpaRelationshipRepository<?, ?, ?, ?> repository) {
 		JpaRelationshipRepository<?, ?, ?, ?> filteredRepository = repository;
 		for (JpaRepositoryFilter filter : filters) {
 			if (filter.accept(resourceClass)) {
@@ -440,28 +461,22 @@ public class JpaModule implements Module {
 
 				// only include relations that are exposed as repositories
 				if (attrConfig != null) {
-					RelationshipRepositoryV2<?, ?, ?, ?> relationshipRepository = filterRelationshipCreation(
-							attrImplClass,
-							repositoryFactory.createRelationshipRepository(this, resourceClass, attrConfig));
+					RelationshipRepositoryV2<?, ?, ?, ?> relationshipRepository = filterRelationshipCreation(attrImplClass, repositoryFactory.createRelationshipRepository(this, resourceClass, attrConfig));
 					context.addRepository(relationshipRepository);
 				}
 			} else if (attrType instanceof MetaResource) {
 				Class<?> attrImplClass = attrType.getImplementationClass();
 				JpaRepositoryConfig<?> attrConfig = getRepositoryConfig(attrImplClass);
 				if (attrConfig == null || attrConfig.getMapper() == null) {
-					throw new IllegalStateException("no mapped entity for " + attrType.getName() + " reference by "
-							+ attr.getId() + " registered");
+					throw new IllegalStateException("no mapped entity for " + attrType.getName() + " reference by " + attr.getId() + " registered");
 				}
 				JpaRepositoryConfig<?> targetConfig = getRepositoryConfig(attrImplClass);
 				Class<?> targetResourceClass = targetConfig.getResourceClass();
 
-				RelationshipRepositoryV2<?, ?, ?, ?> relationshipRepository = filterRelationshipCreation(
-						targetResourceClass,
-						repositoryFactory.createRelationshipRepository(this, resourceClass, attrConfig));
+				RelationshipRepositoryV2<?, ?, ?, ?> relationshipRepository = filterRelationshipCreation(targetResourceClass, repositoryFactory.createRelationshipRepository(this, resourceClass, attrConfig));
 				context.addRepository(relationshipRepository);
 			} else {
-				throw new IllegalStateException("unable to process relation: " + attr.getId()
-						+ ", neither a entity nor a mapped entity is referenced");
+				throw new IllegalStateException("unable to process relation: " + attr.getId() + ", neither a entity nor a mapped entity is referenced");
 			}
 		}
 	}
@@ -487,13 +502,14 @@ public class JpaModule implements Module {
 		}
 		return resourceInformationBuilder;
 	}
-	
+
 	/**
-	 * Sets the information builder to use to read JPA classes. See {@link JpaResourceInformationBuilder}}
+	 * Sets the information builder to use to read JPA classes. See
+	 * {@link JpaResourceInformationBuilder}}
 	 * 
 	 * @param resourceInformationBuilder
 	 */
-	public void setResourceInformationBuilder(ResourceInformationBuilder resourceInformationBuilder){
+	public void setResourceInformationBuilder(ResourceInformationBuilder resourceInformationBuilder) {
 		if (this.resourceInformationBuilder != null) {
 			throw new IllegalStateException("already set");
 		}
@@ -563,7 +579,8 @@ public class JpaModule implements Module {
 
 	/**
 	 * @param resourceClass
-	 * @return true if a repository for the given resourceClass is managed by this module.
+	 * @return true if a repository for the given resourceClass is managed by
+	 *         this module.
 	 */
 	public boolean hasRepository(Class<?> resourceClass) {
 		return repositoryConfigurationMap.containsKey(resourceClass);

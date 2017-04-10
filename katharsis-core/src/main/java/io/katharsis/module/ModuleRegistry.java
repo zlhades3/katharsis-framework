@@ -11,6 +11,8 @@ import java.util.Set;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.katharsis.core.internal.exception.ExceptionMapperLookup;
+import io.katharsis.core.internal.exception.ExceptionMapperRegistry;
+import io.katharsis.core.internal.exception.ExceptionMapperRegistryBuilder;
 import io.katharsis.core.internal.registry.DirectResponseRelationshipEntry;
 import io.katharsis.core.internal.registry.DirectResponseResourceEntry;
 import io.katharsis.core.internal.repository.information.ResourceRepositoryInformationImpl;
@@ -72,6 +74,8 @@ public class ModuleRegistry {
 	private ServiceDiscovery serviceDiscovery;
 
 	private boolean isServer = true;
+
+	private ExceptionMapperRegistry exceptionMapperRegistry;
 
 	public ModuleRegistry() {
 		this(true);
@@ -210,6 +214,11 @@ public class ModuleRegistry {
 		@Override
 		public ResourceInformationBuilder getResourceInformationBuilder() {
 			return ModuleRegistry.this.getResourceInformationBuilder();
+		}
+
+		@Override
+		public ExceptionMapperRegistry getExceptionMapperRegistry() {
+			return ModuleRegistry.this.getExceptionMapperRegistry();
 		}
 	}
 
@@ -436,6 +445,10 @@ public class ModuleRegistry {
 					((InitializingModule) module).init();
 				}
 			}
+			
+			ExceptionMapperLookup exceptionMapperLookup = getExceptionMapperLookup();
+			ExceptionMapperRegistryBuilder mapperRegistryBuilder = new ExceptionMapperRegistryBuilder();
+			exceptionMapperRegistry = mapperRegistryBuilder.build(exceptionMapperLookup);
 		}
 	}
 
@@ -623,5 +636,12 @@ public class ModuleRegistry {
 
 	public ModuleContext getContext() {
 		return new ModuleContextImpl();
+	}
+
+	public ExceptionMapperRegistry getExceptionMapperRegistry() {
+		if(exceptionMapperRegistry == null){
+			throw new IllegalStateException();
+		}
+		return exceptionMapperRegistry;
 	}
 }
