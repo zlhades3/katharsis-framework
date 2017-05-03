@@ -9,19 +9,19 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import io.katharsis.client.mock.models.Schedule;
 import io.katharsis.client.mock.repository.ScheduleRepository;
-import io.katharsis.dispatcher.filter.Filter;
-import io.katharsis.dispatcher.filter.FilterChain;
-import io.katharsis.dispatcher.filter.FilterRequestContext;
+import io.katharsis.core.internal.dispatcher.path.ActionPath;
 import io.katharsis.module.SimpleModule;
 import io.katharsis.queryspec.QuerySpec;
-import io.katharsis.request.path.ActionPath;
-import io.katharsis.response.BaseResponseContext;
+import io.katharsis.repository.filter.DocumentFilter;
+import io.katharsis.repository.filter.DocumentFilterChain;
+import io.katharsis.repository.filter.DocumentFilterContext;
+import io.katharsis.repository.response.Response;
 
 public class ActionTest extends AbstractClientTest {
 
 	protected ScheduleRepository scheduleRepo;
 
-	private Filter filter;
+	private DocumentFilter filter;
 
 	@Before
 	public void setup() {
@@ -32,10 +32,10 @@ public class ActionTest extends AbstractClientTest {
 
 	@Override
 	protected void setupFeature(KatharsisTestFeature feature) {
-		filter = Mockito.spy(new Filter() {
+		filter = Mockito.spy(new DocumentFilter() {
 
 			@Override
-			public BaseResponseContext filter(FilterRequestContext filterRequestContext, FilterChain chain) {
+			public Response filter(DocumentFilterContext filterRequestContext, DocumentFilterChain chain) {
 				return chain.doFilter(filterRequestContext);
 			}
 		});
@@ -54,7 +54,7 @@ public class ActionTest extends AbstractClientTest {
 		Schedule schedule = new Schedule();
 		schedule.setId(1L);
 		schedule.setName("schedule");
-		scheduleRepo.save(schedule);
+		scheduleRepo.create(schedule);
 
 		Iterable<Schedule> schedules = scheduleRepo.findAll(new QuerySpec(Schedule.class));
 		schedule = schedules.iterator().next();
@@ -71,9 +71,9 @@ public class ActionTest extends AbstractClientTest {
 		Assert.assertEquals("repository action: hello", result);
 
 		// check filters
-		ArgumentCaptor<FilterRequestContext> contexts = ArgumentCaptor.forClass(FilterRequestContext.class);
-		Mockito.verify(filter, Mockito.times(1)).filter(contexts.capture(), Mockito.any(FilterChain.class));
-		FilterRequestContext actionContext = contexts.getAllValues().get(0);
+		ArgumentCaptor<DocumentFilterContext> contexts = ArgumentCaptor.forClass(DocumentFilterContext.class);
+		Mockito.verify(filter, Mockito.times(1)).filter(contexts.capture(), Mockito.any(DocumentFilterChain.class));
+		DocumentFilterContext actionContext = contexts.getAllValues().get(0);
 		Assert.assertEquals("GET", actionContext.getMethod());
 		Assert.assertTrue(actionContext.getJsonPath() instanceof ActionPath);
 	}
@@ -83,15 +83,15 @@ public class ActionTest extends AbstractClientTest {
 		Schedule schedule = new Schedule();
 		schedule.setId(1L);
 		schedule.setName("scheduleName");
-		scheduleRepo.save(schedule);
+		scheduleRepo.create(schedule);
 
 		String result = scheduleRepo.resourceAction(1, "hello");
 		Assert.assertEquals("resource action: hello@scheduleName", result);
 
 		// check filters
-		ArgumentCaptor<FilterRequestContext> contexts = ArgumentCaptor.forClass(FilterRequestContext.class);
-		Mockito.verify(filter, Mockito.times(2)).filter(contexts.capture(), Mockito.any(FilterChain.class));
-		FilterRequestContext actionContext = contexts.getAllValues().get(1);
+		ArgumentCaptor<DocumentFilterContext> contexts = ArgumentCaptor.forClass(DocumentFilterContext.class);
+		Mockito.verify(filter, Mockito.times(2)).filter(contexts.capture(), Mockito.any(DocumentFilterChain.class));
+		DocumentFilterContext actionContext = contexts.getAllValues().get(1);
 		Assert.assertEquals("GET", actionContext.getMethod());
 		Assert.assertTrue(actionContext.getJsonPath() instanceof ActionPath);
 	}

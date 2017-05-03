@@ -4,17 +4,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import io.katharsis.client.QuerySpecRelationshipRepositoryStub;
-import io.katharsis.client.QuerySpecResourceRepositoryStub;
 import io.katharsis.jpa.JpaRepositoryConfig.Builder;
 import io.katharsis.jpa.model.RelatedEntity;
 import io.katharsis.jpa.model.TestEntity;
+import io.katharsis.repository.RelationshipRepositoryV2;
+import io.katharsis.repository.ResourceRepositoryV2;
 import io.katharsis.repository.decorate.RelationshipRepositoryDecoratorBase;
 import io.katharsis.repository.decorate.ResourceRepositoryDecoratorBase;
 
 public class JpaRepositoryDecoratorTest extends AbstractJpaJerseyTest {
 
-	private QuerySpecResourceRepositoryStub<TestEntity, Long> testRepo;
+	private ResourceRepositoryV2<TestEntity, Long> testRepo;
 
 	private ResourceRepositoryDecoratorBase<TestEntity, Long> resourceDecorator;
 
@@ -55,18 +55,18 @@ public class JpaRepositoryDecoratorTest extends AbstractJpaJerseyTest {
 	}
 
 	private TestEntity addTestWithOneRelation() {
-		QuerySpecResourceRepositoryStub<RelatedEntity, Long> relatedRepo = client.getQuerySpecRepository(RelatedEntity.class);
+		ResourceRepositoryV2<RelatedEntity, Long> relatedRepo = client.getQuerySpecRepository(RelatedEntity.class);
 		RelatedEntity related = new RelatedEntity();
 		related.setId(1L);
 		related.setStringValue("project");
-		relatedRepo.save(related);
+		relatedRepo.create(related);
 
 		TestEntity test = new TestEntity();
 		test.setId(2L);
 		test.setStringValue("test");
-		testRepo.save(test);
+		testRepo.create(test);
 
-		QuerySpecRelationshipRepositoryStub<TestEntity, Long, RelatedEntity, Long> relRepo = client
+		RelationshipRepositoryV2<TestEntity, Long, RelatedEntity, Long> relRepo = client
 				.getQuerySpecRepository(TestEntity.class, RelatedEntity.class);
 		relRepo.setRelation(test, related.getId(), TestEntity.ATTR_oneRelatedValue);
 

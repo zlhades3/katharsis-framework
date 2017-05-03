@@ -18,18 +18,19 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
-import io.katharsis.jpa.internal.meta.MetaAttribute;
-import io.katharsis.jpa.internal.meta.MetaAttributePath;
-import io.katharsis.jpa.internal.meta.MetaEntity;
-import io.katharsis.jpa.internal.meta.MetaKey;
+import io.katharsis.core.internal.utils.PreconditionUtil;
 import io.katharsis.jpa.internal.query.JoinRegistry;
 import io.katharsis.jpa.internal.query.MetaComputedAttribute;
 import io.katharsis.jpa.internal.query.QueryUtil;
 import io.katharsis.jpa.internal.query.backend.JpaQueryBackend;
+import io.katharsis.jpa.meta.MetaEntity;
 import io.katharsis.jpa.query.criteria.JpaCriteriaExpressionFactory;
+import io.katharsis.meta.model.MetaAttribute;
+import io.katharsis.meta.model.MetaAttributePath;
+import io.katharsis.meta.model.MetaDataObject;
+import io.katharsis.meta.model.MetaKey;
 import io.katharsis.queryspec.Direction;
 import io.katharsis.queryspec.FilterOperator;
-import io.katharsis.utils.PreconditionUtil;
 
 public class JpaCriteriaQueryBackend<T> implements JpaQueryBackend<From<?, ?>, Order, Predicate, Expression<?>> {
 
@@ -46,15 +47,15 @@ public class JpaCriteriaQueryBackend<T> implements JpaQueryBackend<From<?, ?>, O
 	private JpaCriteriaQueryImpl<T> queryImpl;
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public JpaCriteriaQueryBackend(JpaCriteriaQueryImpl<T> query, EntityManager em, Class<T> clazz, Class<?> parentEntityClass,
+	public JpaCriteriaQueryBackend(JpaCriteriaQueryImpl<T> query, EntityManager em, Class<T> clazz, MetaDataObject parentMeta,
 			MetaAttribute parentAttr, boolean parentIdSelection) {
 		this.queryImpl = query;
 
 		cb = em.getCriteriaBuilder();
 		criteriaQuery = (CriteriaQuery<T>) cb.createQuery();
 
-		if (parentEntityClass != null) {
-			parentFrom = criteriaQuery.from(parentEntityClass);
+		if (parentMeta != null) {
+			parentFrom = criteriaQuery.from(parentMeta.getImplementationClass());
 			root = parentFrom.join(parentAttr.getName());
 			joinHelper = new JoinRegistry<>(this, query);
 			joinHelper.putJoin(new MetaAttributePath(), root);
@@ -76,7 +77,7 @@ public class JpaCriteriaQueryBackend<T> implements JpaQueryBackend<From<?, ?>, O
 	}
 
 	private Expression<?> getParentIdExpression(MetaAttribute parentAttr) {
-		MetaEntity parentEntity = parentAttr.getParent().asEntity();
+		MetaEntity parentEntity = (MetaEntity) parentAttr.getParent();
 		MetaKey primaryKey = parentEntity.getPrimaryKey();
 		List<MetaAttribute> elements = primaryKey.getElements();
 		PreconditionUtil.assertFalse("composite primary keys not supported yet", elements.size() != 1);

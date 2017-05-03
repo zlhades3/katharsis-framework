@@ -1,12 +1,14 @@
 package io.katharsis.resource.registry.repository;
 
-import io.katharsis.locator.JsonServiceLocator;
-import io.katharsis.locator.SampleJsonServiceLocator;
-import io.katharsis.repository.RepositoryInstanceBuilder;
-import io.katharsis.repository.annotations.JsonApiRelationshipRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.Test;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import io.katharsis.legacy.locator.JsonServiceLocator;
+import io.katharsis.legacy.locator.SampleJsonServiceLocator;
+import io.katharsis.legacy.registry.AnnotatedRelationshipEntryBuilder;
+import io.katharsis.legacy.registry.RepositoryInstanceBuilder;
+import io.katharsis.legacy.repository.annotations.JsonApiRelationshipRepository;
 
 @SuppressWarnings("unchecked")
 public class AnnotatedRelationshipEntryBuilderTest {

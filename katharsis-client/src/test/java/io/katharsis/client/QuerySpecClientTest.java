@@ -20,9 +20,12 @@ import io.katharsis.client.mock.repository.ScheduleRepository;
 import io.katharsis.client.mock.repository.ScheduleRepository.ScheduleList;
 import io.katharsis.client.mock.repository.ScheduleRepository.ScheduleListLinks;
 import io.katharsis.client.mock.repository.ScheduleRepository.ScheduleListMeta;
+import io.katharsis.errorhandling.exception.ResourceNotFoundException;
 import io.katharsis.queryspec.Direction;
 import io.katharsis.queryspec.QuerySpec;
 import io.katharsis.queryspec.SortSpec;
+import io.katharsis.repository.RelationshipRepositoryV2;
+import io.katharsis.repository.ResourceRepositoryV2;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient.Builder;
 import okhttp3.Request;
@@ -30,17 +33,17 @@ import okhttp3.Response;
 
 public class QuerySpecClientTest extends AbstractClientTest {
 
-	protected QuerySpecResourceRepositoryStub<Task, Long> taskRepo;
+	protected ResourceRepositoryV2<Task, Long> taskRepo;
 
-	protected QuerySpecResourceRepositoryStub<Project, Long> projectRepo;
+	protected ResourceRepositoryV2<Project, Long> projectRepo;
 
-	protected QuerySpecResourceRepositoryStub<Schedule, Long> scheduleRepo;
+	protected ResourceRepositoryV2<Schedule, Long> scheduleRepo;
 
-	protected QuerySpecRelationshipRepositoryStub<Task, Long, Project, Long> relRepo;
+	protected RelationshipRepositoryV2<Task, Long, Project, Long> relRepo;
 
-	protected QuerySpecRelationshipRepositoryStub<Schedule, Long, Task, Long> scheduleTaskRepo;
+	protected RelationshipRepositoryV2<Schedule, Long, Task, Long> scheduleTaskRepo;
 
-	protected QuerySpecRelationshipRepositoryStub<Task, Long, Schedule, Long> taskScheduleRepo;
+	protected RelationshipRepositoryV2<Task, Long, Schedule, Long> taskScheduleRepo;
 
 	@Before
 	public void setup() {
@@ -73,7 +76,7 @@ public class QuerySpecClientTest extends AbstractClientTest {
 		Schedule schedule = new Schedule();
 		schedule.setId(13L);
 		schedule.setName("mySchedule");
-		scheduleRepository.save(schedule);
+		scheduleRepository.create(schedule);
 
 		QuerySpec querySpec = new QuerySpec(Schedule.class);
 		ScheduleList list = scheduleRepository.findAll(querySpec);
@@ -143,15 +146,9 @@ public class QuerySpecClientTest extends AbstractClientTest {
 		Assert.assertTrue(tasks.isEmpty());
 	}
 
-	@Test
+	@Test(expected=ResourceNotFoundException.class)
 	public void testFindNull() {
-		try {
-			taskRepo.findOne(1L, new QuerySpec(Task.class));
-			Assert.fail();
-		}
-		catch (ClientException e) {
-			Assert.assertEquals("Not Found", e.getMessage());
-		}
+		taskRepo.findOne(1L, new QuerySpec(Task.class));
 	}
 
 	@Test
@@ -246,8 +243,7 @@ public class QuerySpecClientTest extends AbstractClientTest {
 			if (pushAlways) {
 				Assert.assertEquals("POST", methods.get(2));
 				Assert.assertEquals("/tasks/", paths.get(2));
-			}
-			else {
+			} else {
 				Assert.assertEquals("PATCH", methods.get(2));
 				Assert.assertEquals("/tasks/1/", paths.get(2));
 			}
@@ -369,7 +365,8 @@ public class QuerySpecClientTest extends AbstractClientTest {
 		savedSchedule.setLazyTask(task);
 		scheduleRepo.save(savedSchedule);
 
-		// still not null because cannot differantiate between not loaded and nulled
+		// still not null because cannot differantiate between not loaded and
+		// nulled
 		Schedule updatedSchedule = scheduleRepo.findOne(schedule.getId(), querySpec);
 		Assert.assertNotNull(updatedSchedule.getLazyTask());
 	}

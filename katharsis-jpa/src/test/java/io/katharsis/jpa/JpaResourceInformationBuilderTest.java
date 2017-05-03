@@ -4,24 +4,25 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import io.katharsis.jpa.internal.JpaResourceInformationBuilder;
-import io.katharsis.jpa.internal.meta.MetaLookup;
 import io.katharsis.jpa.merge.MergedResource;
+import io.katharsis.jpa.meta.JpaMetaProvider;
 import io.katharsis.jpa.model.RelatedEntity;
 import io.katharsis.jpa.model.TestEmbeddable;
 import io.katharsis.jpa.model.TestEntity;
 import io.katharsis.jpa.util.ResourceFieldComparator;
-import io.katharsis.resource.field.ResourceField;
+import io.katharsis.legacy.registry.DefaultResourceInformationBuilderContext;
+import io.katharsis.meta.MetaLookup;
+import io.katharsis.meta.provider.resource.ResourceMetaProvider;
+import io.katharsis.resource.information.ResourceField;
 import io.katharsis.resource.information.ResourceInformation;
 
 public class JpaResourceInformationBuilderTest {
@@ -30,7 +31,11 @@ public class JpaResourceInformationBuilderTest {
 
 	@Before
 	public void setup() {
-		builder = new JpaResourceInformationBuilder(new MetaLookup());
+		MetaLookup lookup = new MetaLookup();
+		lookup.addProvider(new JpaMetaProvider());
+		lookup.addProvider(new ResourceMetaProvider());
+		builder = new JpaResourceInformationBuilder(lookup);
+		builder.init(new DefaultResourceInformationBuilderContext(builder));
 	}
 
 	@Test
@@ -55,7 +60,7 @@ public class JpaResourceInformationBuilderTest {
 
 		ArrayList<ResourceField> relFields = new ArrayList<ResourceField>(info.getRelationshipFields());
 		Collections.sort(relFields, ResourceFieldComparator.INSTANCE);
-		assertEquals(3, relFields.size());
+		assertEquals(4, relFields.size());
 		boolean found = false;
 		for (ResourceField relField : relFields) {
 			if (relField.getUnderlyingName().equals(TestEntity.ATTR_oneRelatedValue)) {
@@ -69,6 +74,7 @@ public class JpaResourceInformationBuilderTest {
 	}
 
 	@Test
+	@Ignore
 	public void mergeRelationsAnnotation() {
 		Assert.assertTrue(builder.accept(MergedResource.class));
 

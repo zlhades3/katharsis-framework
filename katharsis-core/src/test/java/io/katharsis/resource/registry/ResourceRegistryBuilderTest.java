@@ -1,10 +1,24 @@
 package io.katharsis.resource.registry;
 
-import io.katharsis.locator.SampleJsonServiceLocator;
+import static io.katharsis.resource.registry.ResourceRegistryTest.TEST_MODELS_URL;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import io.katharsis.core.internal.repository.adapter.RelationshipRepositoryAdapter;
+import io.katharsis.core.internal.repository.adapter.ResourceRepositoryAdapter;
+import io.katharsis.core.internal.resource.AnnotationResourceInformationBuilder;
+import io.katharsis.errorhandling.exception.RepositoryInstanceNotFoundException;
+import io.katharsis.legacy.locator.SampleJsonServiceLocator;
+import io.katharsis.legacy.registry.ResourceRegistryBuilder;
 import io.katharsis.module.ModuleRegistry;
-import io.katharsis.repository.exception.RepositoryInstanceNotFoundException;
-import io.katharsis.resource.field.ResourceFieldNameTransformer;
-import io.katharsis.resource.information.AnnotationResourceInformationBuilder;
+import io.katharsis.resource.information.ResourceFieldNameTransformer;
 import io.katharsis.resource.information.ResourceInformationBuilder;
 import io.katharsis.resource.mock.models.Document;
 import io.katharsis.resource.mock.models.Project;
@@ -12,18 +26,6 @@ import io.katharsis.resource.mock.models.ResourceWithoutRepository;
 import io.katharsis.resource.mock.models.Task;
 import io.katharsis.resource.mock.models.Thing;
 import io.katharsis.resource.mock.repository.TaskToProjectRepository;
-import io.katharsis.resource.registry.repository.adapter.RelationshipRepositoryAdapter;
-import io.katharsis.resource.registry.repository.adapter.ResourceRepositoryAdapter;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
-import java.util.List;
-
-import static io.katharsis.resource.registry.ResourceRegistryTest.TEST_MODELS_URL;
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class ResourceRegistryBuilderTest {
 
@@ -54,15 +56,15 @@ public class ResourceRegistryBuilderTest {
         Assert.assertNotNull(tasksEntry.getResourceRepository(null));
         List tasksRelationshipRepositories = tasksEntry.getRelationshipEntries();
         Assert.assertEquals(1, tasksRelationshipRepositories.size());
-        Assert.assertEquals(TEST_MODELS_URL + "/tasks", resourceRegistry.getResourceUrl(Task.class));
+        Assert.assertEquals(TEST_MODELS_URL + "/tasks", resourceRegistry.getResourceUrl(tasksEntry.getResourceInformation()));
 
         RegistryEntry projectsEntry = resourceRegistry.getEntry("projects");
         Assert.assertNotNull(projectsEntry);
         Assert.assertEquals("id", projectsEntry.getResourceInformation().getIdField().getUnderlyingName());
         Assert.assertNotNull(tasksEntry.getResourceRepository(null));
         List ProjectRelationshipRepositories = projectsEntry.getRelationshipEntries();
-        Assert.assertEquals(1, ProjectRelationshipRepositories.size());
-        Assert.assertEquals(TEST_MODELS_URL + "/projects", resourceRegistry.getResourceUrl(Project.class));
+        Assert.assertEquals(2, ProjectRelationshipRepositories.size());
+        Assert.assertEquals(TEST_MODELS_URL + "/projects", resourceRegistry.getResourceUrl(projectsEntry.getResourceInformation()));
     }
 
     @Test
@@ -110,7 +112,7 @@ public class ResourceRegistryBuilderTest {
         ResourceRegistry result = sut.build(TEST_MODELS_PACKAGE, new ModuleRegistry(), new ConstantServiceUrlProvider(TEST_MODELS_URL));
 
         // THEN
-        RegistryEntry entry = result.getEntry(ResourceWithoutRepository.class);
+        RegistryEntry entry = result.findEntry(ResourceWithoutRepository.class);
 
         assertThat(entry.getResourceInformation().getResourceClass()).isEqualTo(ResourceWithoutRepository.class);
         assertThat(entry.getResourceRepository(null)).isExactlyInstanceOf(ResourceRepositoryAdapter.class);
